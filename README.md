@@ -1,6 +1,15 @@
 # @antdigital/agentui-react-native
 
-React Native UI primitives for agent chat experiences. The first module is a **Markdown renderer** aligned with [@ant-design/agentic-ui](https://github.com/ant-design/agentic-ui) (`unified` → HAST → React), with **streaming** support (character throttle + block-level sealed/tail caching).
+React Native UI for agent chat, aligned with [@ant-design/agentic-ui](https://github.com/ant-design/agentic-ui) where it matters: **Markdown** (`unified` → HAST → React Native) and a **minimal message list** (simplified `BubbleList`).
+
+## Features
+
+| Module | Description |
+|--------|-------------|
+| **MarkdownRenderer** | GFM markdown, block-level streaming (sealed/tail), optional character throttle |
+| **MessageList** | `FlatList` chat UI: user right / assistant left, each body uses `MarkdownRenderer` |
+
+Not included (see agentic-ui on web): avatars, like/dislike/copy, thought chain, Mermaid, math, Slate editor, plugin code routers.
 
 ## Requirements
 
@@ -10,45 +19,16 @@ React Native UI primitives for agent chat experiences. The first module is a **M
 ## Install
 
 ```bash
-npm install @antdigital/agentui-react-native unified remark-parse remark-gfm remark-rehype hast-util-to-jsx-runtime
+npm install @antdigital/agentui-react-native
 ```
 
 Peer dependencies: `react`, `react-native`.
 
-## Usage
+Markdown pipeline packages (`unified`, `remark-parse`, `remark-gfm`, `remark-rehype`, `hast-util-to-jsx-runtime`) are **dependencies** of this package; you normally do not add them separately.
 
-```tsx
-import { MarkdownRenderer, MarkdownThemeProvider } from '@antdigital/agentui-react-native';
+## Quick start
 
-export function MessageBody({ text }: { text: string }) {
-  return (
-    <MarkdownThemeProvider>
-      <MarkdownRenderer content={text} />
-    </MarkdownThemeProvider>
-  );
-}
-```
-
-### Streaming (SSE / token stream)
-
-```tsx
-<MarkdownRenderer
-  content={partialMarkdown}
-  streaming
-  isFinished={done}
-  throttleOptions={{ enabled: true, charsPerFrame: 3 }}
-/>
-```
-
-- **Character throttle**: reveals text gradually while tokens arrive.
-- **Block split**: completed paragraphs stay stable (`sealed` blocks); only the last block re-parses (`tail`).
-- `throttleOptions.fade` is accepted for API compatibility with web but has **no visual effect** on native.
-
-See [example/README.md](example/README.md) for running and debugging the streaming demo in React Native.
-
-### MessageList (minimal chat UI)
-
-Simplified counterpart to agentic-ui `BubbleList`: left/right bubbles, `FlatList`, and `MarkdownRenderer` per message. No avatars, actions, or thought chain.
+Wrap your tree in `MarkdownThemeProvider` once (required for markdown colors/typography).
 
 ```tsx
 import {
@@ -63,33 +43,120 @@ const messages: ChatMessage[] = [
     id: '2',
     role: 'assistant',
     content: '## Hi\n\nMarkdown **works**.',
-    streaming: false,
     isFinished: true,
   },
 ];
 
+export function ChatScreen() {
+  return (
+    <MarkdownThemeProvider>
+      <MessageList messages={messages} autoScrollToBottom />
+    </MarkdownThemeProvider>
+  );
+}
+```
+
+## MarkdownRenderer
+
+Renders a markdown string as native `View` / `Text` (and related primitives).
+
+```tsx
+import { MarkdownRenderer, MarkdownThemeProvider } from '@antdigital/agentui-react-native';
+
 <MarkdownThemeProvider>
-  <MessageList
-    messages={messages}
-    autoScrollToBottom
-    throttleOptions={{ enabled: true }}
-  />
+  <MarkdownRenderer content="# Title\n\nParagraph with **bold**." />
 </MarkdownThemeProvider>
 ```
 
-Wrap the tree in `MarkdownThemeProvider` (same as standalone `MarkdownRenderer`). Optional `chatTheme` adjusts bubble colors and spacing.
+**Supported (GFM subset):** headings, paragraphs, bold/italic/strike, links, lists, task lists, blockquote, inline/fenced code, tables, horizontal rule, images (URL).
 
-## API
+### Streaming (SSE / token stream)
+
+```tsx
+<MarkdownRenderer
+  content={partialMarkdown}
+  streaming
+  isFinished={streamDone}
+  throttleOptions={{ enabled: true, charsPerFrame: 3 }}
+/>
+```
+
+- **Character throttle** — shows text gradually as `content` grows.
+- **Block split** — finished blocks stay cached (`sealed`); only the last block re-parses often (`tail`).
+- `throttleOptions.fade` — accepted for API parity with web; **no visual effect** on React Native.
+
+Use on the last assistant message in a list via `ChatMessage.streaming` / `isFinished` (see below).
+
+## MessageList
+
+Minimal chat list: no toolbar actions, no avatars.
+
+### `ChatMessage`
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `id` | `string` | Stable key for `FlatList` (host assigns; do not change while streaming) |
+| `role` | `'user' \| 'assistant'` | Layout: user right, assistant left |
+| `content` | `string` | Markdown source |
+| `streaming?` | `boolean` | Usually last assistant message only |
+| `isFinished?` | `boolean` | When true, throttle flushes remaining text |
+
+### `MessageList` props
+
+| Prop | Default | Description |
+|------|---------|-------------|
+| `messages` | — | Array of `ChatMessage` |
+| `autoScrollToBottom` | `true` | Scroll when length or last `content` changes |
+| `throttleOptions` | — | Passed to each bubble’s `MarkdownRenderer` |
+| `chatTheme` | `defaultChatTheme` | Bubble colors, padding, gap (`mergeChatTheme`) |
+| `style` / `contentContainerStyle` | — | `FlatList` styles |
+
+```tsx
+<MessageList
+  messages={messages}
+  autoScrollToBottom
+  throttleOptions={{ enabled: true }}
+  chatTheme={{ userBubbleBackground: '#1677ff' }}
+/>
+```
+
+Single-message layout: use `MessageBubble` + `MarkdownRenderer` directly (both exported).
+
+## API exports
 
 | Export | Description |
 |--------|-------------|
-| `MarkdownRenderer` | Main component |
-| `useMarkdownToReact` | Hook: markdown string → React tree |
-| `markdownToReactSync` | Sync parse (tests / one-off) |
-| `useContentThrottle` | Standalone throttle hook |
-| `MarkdownThemeProvider` / `defaultTheme` | Theming |
-| `MessageList` / `MessageBubble` | Minimal chat list |
-| `defaultChatTheme` / `ChatMessage` | List bubble styling and data shape |
+| `MarkdownRenderer` | Markdown → RN tree |
+| `MessageList` / `MessageBubble` | Chat list / single row |
+| `useMarkdownToReact` | Hook (block streaming pipeline) |
+| `markdownToReactSync` | Sync parse (tests) |
+| `useContentThrottle` | Character throttle only |
+| `MarkdownThemeProvider` / `defaultTheme` | Markdown typography & colors |
+| `defaultChatTheme` / `mergeChatTheme` | Bubble chrome |
+| `createHastProcessor`, `splitMarkdownBlocks`, `shouldReparseLastBlock` | Advanced / streaming internals |
+
+Types: `ChatMessage`, `MessageListProps`, `MarkdownRendererProps`, `ContentThrottleOptions`, `ChatTheme`, `MarkdownTheme`, …
+
+## Example app (Expo)
+
+From repo root:
+
+```bash
+npm install
+cd example && npm install
+npm run example
+```
+
+Or: `npm run example` from root.
+
+The example includes:
+
+- **MessageList** — static thread + “Stream reply” (assistant streaming in the list)
+- **Streaming only** — single `MarkdownRenderer` demo
+
+Details: [example/README.md](example/README.md).
+
+Debug: breakpoints in `example/*.tsx` or `src/**`; Metro resolves the library via `react-native` → `src/index.ts`.
 
 ## Develop
 
@@ -100,14 +167,15 @@ npm test
 npm run build
 ```
 
-### Debug `StreamingDemo` (Expo)
+Output: `lib/` (published `main` / `types`). Local Expo example uses `src/` via Metro `watchFolders`.
 
-```bash
-cd example && npm install && npm start
-# or: npm run example
-```
+## Relation to agentic-ui
 
-See [example/README.md](example/README.md).
+| Web (`agentic-ui`) | This package |
+|--------------------|--------------|
+| `MarkdownRenderer` + remark/rehype plugins | Slim processor (GFM only) |
+| `BubbleList` / `PureBubbleList` | `MessageList` |
+| Ant Design, CSS fade tokens | RN `View`/`Text`, no fade |
 
 ## License
 

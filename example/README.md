@@ -1,10 +1,10 @@
-# Streaming demo (React Native debug)
+# Example app (Expo)
 
-Expo app that mounts [`StreamingDemo.tsx`](./StreamingDemo.tsx) so you can run and debug Markdown streaming on a simulator, device, or Expo Go.
+Runs the library against live `../src` (monorepo Metro config).
 
-## One-time setup
+## Setup
 
-From the **repository root**:
+From repository root:
 
 ```bash
 npm install
@@ -14,35 +14,38 @@ npm install
 
 ## Run
 
-From `example/`:
-
 ```bash
 npm start
 ```
 
-Or from the repo root:
+From root: `npm run example` (same as `npm run start --prefix example`).
 
-```bash
-npm run example
-```
+- **Android:** press `a`
+- **iOS:** press `i` (macOS)
+- **Device:** scan QR with Expo Go
 
-Then:
+## Screens
 
-- Press `a` for Android emulator, `i` for iOS simulator, or scan the QR code with **Expo Go** on a physical device.
+| Mode (top buttons) | File | What it exercises |
+|--------------------|------|-------------------|
+| **MessageList** | `MessageListDemo.tsx` | `MessageList`, `ChatMessage[]`, streaming assistant reply |
+| **Streaming only** | `StreamingDemo.tsx` | Single `MarkdownRenderer` + throttle |
 
-## Debug in VS Code / Cursor
+Entry: `App.tsx` → `index.js`.
 
-1. Start Metro: `npm run example` (or `cd example && npm start`).
-2. Open the app on emulator/device (Expo Go or dev build).
-3. Use **Run and Debug** → **Attach to Metro (example)** (port `8081`), or set breakpoints in `example/StreamingDemo.tsx` and use the React Native Tools extension if installed.
+## Debug
 
-Breakpoints in the library resolve to [`../src`](../src) because Metro watches the parent package (`file:..` + `react-native` field → `src/index.ts`).
+1. Start Metro (`npm run example`).
+2. Open app on emulator or device.
+3. Optional: **Run and Debug** → **Attach to Metro (example)** (port `8081`) in `.vscode/launch.json`.
 
-## Files
+Breakpoints in `../src` work because `metro.config.js` sets `watchFolders` to the repo root and links `@antdigital/agentui-react-native` via `file:..`.
+
+## Key files
 
 | File | Role |
 |------|------|
-| `App.tsx` | Root component |
-| `StreamingDemo.tsx` | Streaming UI under test |
-| `metro.config.js` | Monorepo: watch parent `src` |
-| `index.js` | Expo entry |
+| `metro.config.js` | Parent package + `node_modules` resolution |
+| `package.json` | `"@antdigital/agentui-react-native": "file:.."` |
+| `MessageListDemo.tsx` | Chat list + simulated stream |
+| `StreamingDemo.tsx` | Standalone markdown stream |
