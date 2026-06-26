@@ -2,14 +2,14 @@ import React from 'react';
 import { createHastProcessor } from './processor';
 import { buildRnComponents } from './buildRnComponents';
 import { renderMarkdownBlock } from './renderMarkdownBlock';
-import { defaultTheme, mergeTheme, type MarkdownTheme } from '../theme/defaultTheme';
+import { defaultTheme, mergeTheme, type MarkdownThemeOverride } from '../theme/defaultTheme';
 import type { MarkdownRemarkPlugin, RendererBlockProps } from './types';
 
 export const markdownToReactSync = (
   content: string,
   components?: Record<string, React.ComponentType<RendererBlockProps>>,
   remarkPlugins?: MarkdownRemarkPlugin[],
-  themePartial?: Partial<MarkdownTheme>,
+  themePartial?: MarkdownThemeOverride,
 ): React.ReactNode => {
   if (!content) return null;
   const theme = mergeTheme(defaultTheme, themePartial);

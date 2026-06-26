@@ -116,7 +116,7 @@ Minimal chat list: no toolbar actions, no avatars.
   messages={messages}
   autoScrollToBottom
   throttleOptions={{ enabled: true }}
-  chatTheme={{ userBubbleBackground: '#1677ff' }}
+  chatTheme={{ userBubbleBackground: '#e6f4ff' }}
 />
 ```
 

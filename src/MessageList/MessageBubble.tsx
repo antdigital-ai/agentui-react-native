@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
-import type { MarkdownTheme } from '../theme/defaultTheme';
+import type { MarkdownThemeOverride } from '../theme/defaultTheme';
+import { agenticColors } from '../theme/agenticTokens';
 import type { MessageBubbleProps } from './types';
 
 export function MessageBubble({
@@ -13,33 +14,38 @@ export function MessageBubble({
 
   const bubbleStyle = useMemo(
     () => ({
-      maxWidth: chatTheme.bubbleMaxWidth,
+      maxWidth: isUser
+        ? chatTheme.userBubbleMaxWidth
+        : chatTheme.assistantBubbleMaxWidth,
       padding: chatTheme.bubblePadding,
-      borderRadius: chatTheme.bubbleRadius,
       backgroundColor: isUser
         ? chatTheme.userBubbleBackground
         : chatTheme.assistantBubbleBackground,
+      ...(isUser
+        ? {
+            borderTopLeftRadius: chatTheme.bubbleRadius,
+            borderTopRightRadius: chatTheme.bubbleRadius,
+            borderBottomRightRadius: 2,
+            borderBottomLeftRadius: chatTheme.bubbleRadius,
+          }
+        : { borderRadius: chatTheme.bubbleRadius }),
+      ...(Platform.OS === 'web' && !isUser
+        ? {
+            boxShadow: '0 1px 2px rgba(20, 22, 28, 0.06)',
+          }
+        : null),
     }),
     [chatTheme, isUser],
   );
 
-  const markdownTheme = useMemo((): Partial<MarkdownTheme> | undefined => {
+  const markdownTheme = useMemo((): MarkdownThemeOverride | undefined => {
     if (!isUser) return undefined;
     return {
       colors: {
-        text: '#ffffff',
-        textMuted: 'rgba(255,255,255,0.75)',
-        link: '#e6f4ff',
-        codeBackground: 'rgba(255,255,255,0.15)',
-        codeText: '#ffffff',
-        blockquoteBorder: 'rgba(255,255,255,0.3)',
-        blockquoteBackground: 'rgba(255,255,255,0.08)',
-        border: 'rgba(255,255,255,0.2)',
-        tableHeaderBackground: 'rgba(255,255,255,0.1)',
-        taskCheckboxBorder: 'rgba(255,255,255,0.5)',
-        hr: 'rgba(255,255,255,0.25)',
-        errorBackground: '#fff2f0',
-        errorBorder: '#ffccc7',
+        codeBackground: agenticColors.userBubbleCodeBackground,
+        blockquoteBorder: agenticColors.primary,
+        hr: agenticColors.userBubbleHr,
+        linkUnderline: agenticColors.userBubbleLinkUnderline,
       },
     };
   }, [isUser]);

@@ -3,12 +3,13 @@ import {
   defaultTheme,
   mergeTheme,
   type MarkdownTheme,
+  type MarkdownThemeOverride,
 } from './defaultTheme';
 
 const MarkdownThemeContext = createContext<MarkdownTheme>(defaultTheme);
 
 export interface MarkdownThemeProviderProps {
-  theme?: Partial<MarkdownTheme>;
+  theme?: MarkdownThemeOverride;
   children: React.ReactNode;
 }
 
@@ -32,7 +33,7 @@ export function useMarkdownTheme(): MarkdownTheme {
 }
 
 export function useMarkdownThemeWithOverride(
-  partial?: Partial<MarkdownTheme>,
+  partial?: MarkdownThemeOverride,
 ): MarkdownTheme {
   const base = useMarkdownTheme();
   return useMemo(() => mergeTheme(base, partial), [base, partial]);

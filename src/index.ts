@@ -21,7 +21,7 @@ export type {
   MarkdownRemarkPlugin,
   RendererBlockProps,
 } from './MarkdownRenderer/types';
-export type { MarkdownTheme } from './theme/defaultTheme';
+export type { MarkdownTheme, MarkdownThemeOverride } from './theme/defaultTheme';
 export {
   MessageList,
   MessageBubble,

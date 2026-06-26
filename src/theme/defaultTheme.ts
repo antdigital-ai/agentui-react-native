@@ -1,4 +1,5 @@
 import type { TextStyle, ViewStyle } from 'react-native';
+import { agenticColors, agenticSpacing } from './agenticTokens';
 import { fontFamilies } from './fonts';
 
 export interface MarkdownTheme {
@@ -6,10 +7,12 @@ export interface MarkdownTheme {
     text: string;
     textMuted: string;
     link: string;
+    linkUnderline: string;
     codeBackground: string;
     codeText: string;
     blockquoteBorder: string;
     blockquoteBackground: string;
+    blockquoteText: string;
     border: string;
     tableHeaderBackground: string;
     taskCheckboxBorder: string;
@@ -41,54 +44,63 @@ export interface MarkdownTheme {
   blockquote: ViewStyle;
 }
 
+export type MarkdownThemeOverride = {
+  colors?: Partial<MarkdownTheme['colors']>;
+  typography?: Partial<MarkdownTheme['typography']>;
+  spacing?: Partial<MarkdownTheme['spacing']>;
+  blockquote?: Partial<ViewStyle>;
+};
+
 export const defaultTheme: MarkdownTheme = {
   colors: {
-    text: '#1f1f1f',
-    textMuted: 'rgba(0,0,0,0.45)',
-    link: '#1677ff',
-    codeBackground: '#f5f5f5',
-    codeText: '#1f1f1f',
-    blockquoteBorder: '#d9d9d9',
-    blockquoteBackground: '#fafafa',
-    border: '#f0f0f0',
-    tableHeaderBackground: '#fafafa',
-    taskCheckboxBorder: '#d9d9d9',
-    hr: '#f0f0f0',
+    text: agenticColors.text,
+    textMuted: agenticColors.textMuted,
+    link: agenticColors.text,
+    linkUnderline: agenticColors.borderLight,
+    codeBackground: agenticColors.codeBackground,
+    codeText: agenticColors.text,
+    blockquoteBorder: agenticColors.controlFillSecondary,
+    blockquoteBackground: 'transparent',
+    blockquoteText: agenticColors.textSecondary,
+    border: agenticColors.borderLight,
+    tableHeaderBackground: agenticColors.tableHeaderBackground,
+    taskCheckboxBorder: agenticColors.borderLight,
+    hr: agenticColors.borderLight,
     errorBackground: '#fff2f0',
     errorBorder: '#ffccc7',
   },
   typography: {
-    body: { fontSize: 15, lineHeight: 22, ...fontFamilies.body },
-    h1: { fontSize: 26, lineHeight: 32, fontWeight: '600', ...fontFamilies.body },
-    h2: { fontSize: 22, lineHeight: 28, fontWeight: '600', ...fontFamilies.body },
-    h3: { fontSize: 18, lineHeight: 24, fontWeight: '600', ...fontFamilies.body },
-    h4: { fontSize: 16, lineHeight: 22, fontWeight: '600', ...fontFamilies.body },
-    h5: { fontSize: 15, lineHeight: 22, fontWeight: '600', ...fontFamilies.body },
-    h6: { fontSize: 14, lineHeight: 20, fontWeight: '600', ...fontFamilies.body },
-    code: { fontSize: 13, lineHeight: 18, ...fontFamilies.code },
-    inlineCode: { fontSize: 13, ...fontFamilies.code },
+    body: { fontSize: 15, lineHeight: 23, ...fontFamilies.body },
+    h1: { fontSize: 30, lineHeight: 38, fontWeight: '600', ...fontFamilies.body },
+    h2: { fontSize: 24, lineHeight: 32, fontWeight: '600', ...fontFamilies.body },
+    h3: { fontSize: 18, lineHeight: 26, fontWeight: '600', ...fontFamilies.body },
+    h4: { fontSize: 15, lineHeight: 24, fontWeight: '600', ...fontFamilies.body },
+    h5: { fontSize: 15, lineHeight: 24, fontWeight: '600', ...fontFamilies.body },
+    h6: { fontSize: 15, lineHeight: 24, fontWeight: '600', ...fontFamilies.body },
+    code: { fontSize: 14, lineHeight: 20, ...fontFamilies.code },
+    inlineCode: { fontSize: 14, ...fontFamilies.code },
   },
   spacing: {
-    paragraphGap: 4,
-    listIndent: 16,
-    listItemGap: 2,
-    blockquotePadding: 6,
-    codeBlockPadding: 8,
-    tableCellPadding: 6,
-    headingMarginTop: 10,
-    headingMarginBottom: 4,
+    paragraphGap: agenticSpacing.margin2x,
+    listIndent: 28,
+    listItemGap: agenticSpacing.margin1x,
+    blockquotePadding: agenticSpacing.margin2x,
+    codeBlockPadding: agenticSpacing.margin2x + agenticSpacing.margin1x,
+    tableCellPadding: agenticSpacing.margin2x,
+    headingMarginTop: agenticSpacing.margin2x,
+    headingMarginBottom: agenticSpacing.margin2x,
   },
   blockquote: {
     borderLeftWidth: 3,
-    paddingLeft: 8,
-    marginTop: 4,
-    marginBottom: 4,
+    paddingLeft: agenticSpacing.margin2x + agenticSpacing.margin1x,
+    marginTop: 0,
+    marginBottom: 0,
   },
 };
 
 export function mergeTheme(
   base: MarkdownTheme,
-  partial?: Partial<MarkdownTheme>,
+  partial?: MarkdownThemeOverride,
 ): MarkdownTheme {
   if (!partial) return base;
   return {

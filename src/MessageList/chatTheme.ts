@@ -1,23 +1,26 @@
 import type { DimensionValue } from 'react-native';
+import { agenticColors } from '../theme/agenticTokens';
 
 export interface ChatTheme {
   listPadding: number;
   bubbleGap: number;
   bubblePadding: number;
   bubbleRadius: number;
-  bubbleMaxWidth: DimensionValue;
+  userBubbleMaxWidth: DimensionValue;
+  assistantBubbleMaxWidth: DimensionValue;
   userBubbleBackground: string;
   assistantBubbleBackground: string;
 }
 
 export const defaultChatTheme: ChatTheme = {
-  listPadding: 12,
+  listPadding: 16,
   bubbleGap: 8,
-  bubblePadding: 8,
-  bubbleRadius: 8,
-  bubbleMaxWidth: '85%',
-  userBubbleBackground: '#1677ff',
-  assistantBubbleBackground: '#f5f5f5',
+  bubblePadding: 12,
+  bubbleRadius: 12,
+  userBubbleMaxWidth: '75%',
+  assistantBubbleMaxWidth: '85%',
+  userBubbleBackground: agenticColors.userBubbleBackground,
+  assistantBubbleBackground: agenticColors.assistantBubbleBackground,
 };
 
 export function mergeChatTheme(

@@ -1,7 +1,7 @@
 import type React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { Plugin } from 'unified';
-import type { MarkdownTheme } from '../theme/defaultTheme';
+import type { MarkdownTheme, MarkdownThemeOverride } from '../theme/defaultTheme';
 
 export interface ContentThrottleOptions {
   charsPerFrame?: number;
@@ -45,7 +45,7 @@ export interface MarkdownRendererProps {
     defaultDom: React.ReactNode,
   ) => React.ReactNode;
   components?: Record<string, React.ComponentType<RendererBlockProps>>;
-  theme?: Partial<MarkdownTheme>;
+  theme?: MarkdownThemeOverride;
   testID?: string;
 }
 
@@ -60,5 +60,5 @@ export interface UseMarkdownToReactOptions {
   streaming?: boolean;
   contentRevisionSource?: string;
   eleRender?: MarkdownRendererProps['eleRender'];
-  theme?: Partial<MarkdownTheme>;
+  theme?: MarkdownThemeOverride;
 }

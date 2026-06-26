@@ -10,6 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import type { MarkdownTheme } from '../theme/defaultTheme';
+import { headingMargins } from '../theme/headingMargins';
 import type {
   MarkdownRendererEleProps,
   MarkdownRendererProps,
@@ -54,6 +55,7 @@ export const buildRnComponents = ({
     (props) => {
       const { children } = props;
       const typo = theme.typography[`h${level}`];
+      const margins = headingMargins[level];
       const defaultDom = (
         <Text
           accessibilityRole="header"
@@ -62,8 +64,8 @@ export const buildRnComponents = ({
             body,
             typo,
             {
-              marginTop: theme.spacing.headingMarginTop,
-              marginBottom: theme.spacing.headingMarginBottom,
+              marginTop: margins.marginTop,
+              marginBottom: margins.marginBottom,
             },
           ]}
         >
@@ -131,8 +133,15 @@ export const buildRnComponents = ({
         <Text
           testID="markdown-link"
           style={[
-            { color: theme.colors.link, ...theme.typography.body },
-            Platform.OS === 'web' ? ({ cursor: 'pointer' } as TextStyle) : null,
+            {
+              color: theme.colors.link,
+              ...theme.typography.body,
+              textDecorationLine: 'underline',
+              textDecorationColor: theme.colors.linkUnderline,
+            },
+            Platform.OS === 'web'
+              ? ({ cursor: 'pointer', textUnderlineOffset: 4 } as TextStyle)
+              : null,
           ]}
           onPress={onPress}
         >
@@ -143,14 +152,28 @@ export const buildRnComponents = ({
     },
 
     ul: (props) => (
-      <View testID="markdown-list-unordered" style={{ marginBottom: 4 }}>
+      <View
+        testID="markdown-list-unordered"
+        style={{
+          marginTop: theme.spacing.paragraphGap,
+          marginBottom: theme.spacing.paragraphGap * 2,
+          paddingLeft: theme.spacing.listIndent,
+        }}
+      >
         {props.children}
       </View>
     ),
     ol: (props) => {
       const items = React.Children.toArray(props.children);
       return (
-        <View testID="markdown-list-ordered" style={{ marginBottom: 4 }}>
+        <View
+          testID="markdown-list-ordered"
+          style={{
+            marginTop: theme.spacing.paragraphGap,
+            marginBottom: theme.spacing.paragraphGap * 2,
+            paddingLeft: theme.spacing.listIndent,
+          }}
+        >
           {items.map((child, index) => {
             if (!React.isValidElement(child)) return child;
             return React.cloneElement(child as React.ReactElement, {
@@ -172,7 +195,8 @@ export const buildRnComponents = ({
           style={{
             flexDirection: 'row',
             marginBottom: theme.spacing.listItemGap,
-            paddingLeft: theme.spacing.listIndent,
+            marginTop: theme.spacing.listItemGap,
+            paddingLeft: 0,
           }}
         >
           {isTask ? (
@@ -215,6 +239,7 @@ export const buildRnComponents = ({
               backgroundColor: theme.colors.blockquoteBackground,
               paddingTop: theme.spacing.blockquotePadding,
               paddingBottom: theme.spacing.blockquotePadding,
+              paddingRight: theme.spacing.blockquotePadding,
             },
           ]}
         >
@@ -254,9 +279,11 @@ export const buildRnComponents = ({
             {
               backgroundColor: theme.colors.codeBackground,
               color: theme.colors.codeText,
-              paddingHorizontal: 3,
-              paddingVertical: 1,
-              borderRadius: 4,
+              marginHorizontal: 3,
+              marginVertical: 1,
+              paddingHorizontal: 6,
+              paddingVertical: 4,
+              borderRadius: 6,
             },
           ]}
         >
@@ -275,8 +302,8 @@ export const buildRnComponents = ({
           testID="markdown-code-block"
           style={{
             backgroundColor: theme.colors.codeBackground,
-            borderRadius: 6,
-            marginVertical: 4,
+            borderRadius: 12,
+            marginVertical: theme.spacing.paragraphGap,
             padding: theme.spacing.codeBlockPadding,
           }}
         >
@@ -294,7 +321,7 @@ export const buildRnComponents = ({
         style={{
           height: 1,
           backgroundColor: theme.colors.hr,
-          marginVertical: 8,
+          marginVertical: theme.spacing.paragraphGap * 4,
         }}
       />
     ),
