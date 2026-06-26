@@ -11,10 +11,10 @@ export interface ChatTheme {
 }
 
 export const defaultChatTheme: ChatTheme = {
-  listPadding: 16,
-  bubbleGap: 12,
-  bubblePadding: 12,
-  bubbleRadius: 12,
+  listPadding: 12,
+  bubbleGap: 8,
+  bubblePadding: 8,
+  bubbleRadius: 8,
   bubbleMaxWidth: '85%',
   userBubbleBackground: '#1677ff',
   assistantBubbleBackground: '#f5f5f5',

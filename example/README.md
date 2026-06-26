@@ -22,6 +22,7 @@ From root: `npm run example` (same as `npm run start --prefix example`).
 
 - **Android:** press `a`
 - **iOS:** press `i` (macOS)
+- **Web:** press `w` or `npm run web` (centered layout, max width 720px)
 - **Device:** scan QR with Expo Go
 
 ## Screens

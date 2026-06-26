@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { FlatList, type ListRenderItem } from 'react-native';
+import { FlatList, Platform, type ListRenderItem } from 'react-native';
 import { mergeChatTheme, defaultChatTheme } from './chatTheme';
 import { MessageBubble } from './MessageBubble';
 import type { ChatMessage, MessageListProps } from './types';
@@ -45,7 +45,12 @@ export function MessageList({
       data={messages}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      style={style}
+      style={[
+        style,
+        Platform.OS === 'web'
+          ? { flex: 1, minHeight: 0, width: '100%' }
+          : null,
+      ]}
       contentContainerStyle={[
         {
           padding: chatTheme.listPadding,

@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "example": "npm run start --prefix example",
     "example:android": "npm run android --prefix example",
-    "example:ios": "npm run ios --prefix example"
+    "example:ios": "npm run ios --prefix example",
+    "example:web": "npm run web --prefix example"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

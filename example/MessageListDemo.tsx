@@ -5,6 +5,7 @@ import {
   MessageList,
   type ChatMessage,
 } from '@antdigital/agentui-react-native';
+import { demoStyles } from './demoStyles';
 
 const INITIAL: ChatMessage[] = [
   {
@@ -83,13 +84,13 @@ export function MessageListDemoScreen() {
 
   return (
     <MarkdownThemeProvider>
-      <View style={{ flex: 1, backgroundColor: '#fff' }}>
-        <View style={{ flexDirection: 'row', gap: 8, padding: 8 }}>
+      <View style={demoStyles.content}>
+        <View style={demoStyles.actionBar}>
           <Button title="Stream reply" onPress={appendStreamingReply} />
           <Button title="Reset" onPress={resetChat} />
         </View>
         <MessageList
-          style={{ flex: 1 }}
+          style={demoStyles.content}
           messages={messages}
           throttleOptions={{ enabled: true }}
         />

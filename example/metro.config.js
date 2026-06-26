@@ -14,4 +14,14 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.disableHierarchicalLookup = true;
 
+// remark/unified deps (e.g. devlop) are exports-only; required for web + monorepo resolution
+config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_conditionNames = [
+  'browser',
+  'require',
+  'react-native',
+  'development',
+  'default',
+];
+
 module.exports = config;

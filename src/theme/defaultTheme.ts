@@ -1,4 +1,5 @@
 import type { TextStyle, ViewStyle } from 'react-native';
+import { fontFamilies } from './fonts';
 
 export interface MarkdownTheme {
   colors: {
@@ -57,30 +58,31 @@ export const defaultTheme: MarkdownTheme = {
     errorBorder: '#ffccc7',
   },
   typography: {
-    body: { fontSize: 16, lineHeight: 24 },
-    h1: { fontSize: 28, lineHeight: 36, fontWeight: '600' },
-    h2: { fontSize: 24, lineHeight: 32, fontWeight: '600' },
-    h3: { fontSize: 20, lineHeight: 28, fontWeight: '600' },
-    h4: { fontSize: 18, lineHeight: 26, fontWeight: '600' },
-    h5: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
-    h6: { fontSize: 14, lineHeight: 22, fontWeight: '600' },
-    code: { fontSize: 14, lineHeight: 20, fontFamily: 'monospace' },
-    inlineCode: { fontSize: 14, fontFamily: 'monospace' },
+    body: { fontSize: 15, lineHeight: 22, ...fontFamilies.body },
+    h1: { fontSize: 26, lineHeight: 32, fontWeight: '600', ...fontFamilies.body },
+    h2: { fontSize: 22, lineHeight: 28, fontWeight: '600', ...fontFamilies.body },
+    h3: { fontSize: 18, lineHeight: 24, fontWeight: '600', ...fontFamilies.body },
+    h4: { fontSize: 16, lineHeight: 22, fontWeight: '600', ...fontFamilies.body },
+    h5: { fontSize: 15, lineHeight: 22, fontWeight: '600', ...fontFamilies.body },
+    h6: { fontSize: 14, lineHeight: 20, fontWeight: '600', ...fontFamilies.body },
+    code: { fontSize: 13, lineHeight: 18, ...fontFamilies.code },
+    inlineCode: { fontSize: 13, ...fontFamilies.code },
   },
   spacing: {
-    paragraphGap: 8,
-    listIndent: 20,
-    listItemGap: 4,
-    blockquotePadding: 12,
-    codeBlockPadding: 12,
-    tableCellPadding: 8,
-    headingMarginTop: 16,
-    headingMarginBottom: 8,
+    paragraphGap: 4,
+    listIndent: 16,
+    listItemGap: 2,
+    blockquotePadding: 6,
+    codeBlockPadding: 8,
+    tableCellPadding: 6,
+    headingMarginTop: 10,
+    headingMarginBottom: 4,
   },
   blockquote: {
-    borderLeftWidth: 4,
-    paddingLeft: 12,
-    marginVertical: 8,
+    borderLeftWidth: 3,
+    paddingLeft: 8,
+    marginTop: 4,
+    marginBottom: 4,
   },
 };
 

@@ -20,6 +20,10 @@
       },
       "package": "com.antdigital.agentui.markdowndemo"
     },
+    "web": {
+      "bundler": "metro",
+      "backgroundColor": "#ffffff"
+    },
     "plugins": [
       "expo-asset"
     ]

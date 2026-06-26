@@ -3,11 +3,12 @@
  * Simulates SSE-style streaming with character throttle + block-level parsing.
  */
 import React, { useRef, useState } from 'react';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Button, ScrollView, Text, View } from 'react-native';
 import {
   MarkdownRenderer,
   MarkdownThemeProvider,
 } from '@antdigital/agentui-react-native';
+import { demoStyles } from './demoStyles';
 
 const SAMPLE = `# Agent reply
 
@@ -68,13 +69,13 @@ export function StreamingDemoScreen() {
 
   return (
     <MarkdownThemeProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+      <View style={demoStyles.content}>
+        <View style={demoStyles.actionBar}>
           <Button title="Start streaming demo" onPress={startStream} />
         </View>
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          style={demoStyles.content}
+          contentContainerStyle={demoStyles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
           <MarkdownRenderer
@@ -85,11 +86,9 @@ export function StreamingDemoScreen() {
           />
         </ScrollView>
         {!streaming && content.length > 0 ? (
-          <Text style={{ padding: 8, opacity: 0.6, textAlign: 'center' }}>
-            Stream complete
-          </Text>
+          <Text style={demoStyles.footerHint}>Stream complete</Text>
         ) : null}
-      </SafeAreaView>
+      </View>
     </MarkdownThemeProvider>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Image,
   Linking,
+  Platform,
   ScrollView,
   Text,
   View,
@@ -93,7 +94,7 @@ export const buildRnComponents = ({
       const defaultDom = (
         <View
           testID="markdown-paragraph"
-          style={{ marginBottom: theme.spacing.paragraphGap }}
+          style={{ marginBottom: theme.spacing.paragraphGap, marginTop: 0 }}
         >
           {children}
         </View>
@@ -129,7 +130,10 @@ export const buildRnComponents = ({
       const defaultDom = (
         <Text
           testID="markdown-link"
-          style={{ color: theme.colors.link, ...theme.typography.body }}
+          style={[
+            { color: theme.colors.link, ...theme.typography.body },
+            Platform.OS === 'web' ? ({ cursor: 'pointer' } as TextStyle) : null,
+          ]}
           onPress={onPress}
         >
           {children}
@@ -139,14 +143,14 @@ export const buildRnComponents = ({
     },
 
     ul: (props) => (
-      <View testID="markdown-list-unordered" style={{ marginBottom: 8 }}>
+      <View testID="markdown-list-unordered" style={{ marginBottom: 4 }}>
         {props.children}
       </View>
     ),
     ol: (props) => {
       const items = React.Children.toArray(props.children);
       return (
-        <View testID="markdown-list-ordered" style={{ marginBottom: 8 }}>
+        <View testID="markdown-list-ordered" style={{ marginBottom: 4 }}>
           {items.map((child, index) => {
             if (!React.isValidElement(child)) return child;
             return React.cloneElement(child as React.ReactElement, {
@@ -209,11 +213,12 @@ export const buildRnComponents = ({
             {
               borderLeftColor: theme.colors.blockquoteBorder,
               backgroundColor: theme.colors.blockquoteBackground,
-              paddingVertical: theme.spacing.blockquotePadding,
+              paddingTop: theme.spacing.blockquotePadding,
+              paddingBottom: theme.spacing.blockquotePadding,
             },
           ]}
         >
-          <Text style={body}>{props.children}</Text>
+          {props.children}
         </View>
       );
       return applyEleRender(
@@ -231,7 +236,11 @@ export const buildRnComponents = ({
         return (
           <Text
             testID="markdown-fenced-code"
-            style={[theme.typography.code, { color: theme.colors.codeText }]}
+            style={[
+              theme.typography.code,
+              { color: theme.colors.codeText },
+              Platform.OS === 'web' ? ({ whiteSpace: 'pre' } as TextStyle) : null,
+            ]}
           >
             {children}
           </Text>
@@ -245,6 +254,9 @@ export const buildRnComponents = ({
             {
               backgroundColor: theme.colors.codeBackground,
               color: theme.colors.codeText,
+              paddingHorizontal: 3,
+              paddingVertical: 1,
+              borderRadius: 4,
             },
           ]}
         >
@@ -264,7 +276,7 @@ export const buildRnComponents = ({
           style={{
             backgroundColor: theme.colors.codeBackground,
             borderRadius: 6,
-            marginVertical: 8,
+            marginVertical: 4,
             padding: theme.spacing.codeBlockPadding,
           }}
         >
@@ -282,7 +294,7 @@ export const buildRnComponents = ({
         style={{
           height: 1,
           backgroundColor: theme.colors.hr,
-          marginVertical: 12,
+          marginVertical: 8,
         }}
       />
     ),
@@ -296,7 +308,7 @@ export const buildRnComponents = ({
         <Image
           testID="markdown-image"
           source={{ uri: src }}
-          style={{ width: '100%', height: 200, resizeMode: 'contain', marginVertical: 8 }}
+          style={{ width: '100%', height: 200, resizeMode: 'contain', marginVertical: 4 }}
           accessibilityLabel={(props.alt as string) || 'image'}
         />
       );
@@ -306,7 +318,7 @@ export const buildRnComponents = ({
       <ScrollView
         horizontal
         testID="markdown-table"
-        style={{ marginVertical: 8 }}
+        style={{ marginVertical: 4 }}
       >
         <View>{props.children}</View>
       </ScrollView>

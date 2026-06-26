@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, SafeAreaView, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { demoStyles } from './demoStyles';
 import { MessageListDemoScreen } from './MessageListDemo';
 import { StreamingDemoScreen } from './StreamingDemo';
 
@@ -12,23 +13,25 @@ export default function App() {
   return (
     <>
       <StatusBar style="auto" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <View style={{ flexDirection: 'row', padding: 8, gap: 8 }}>
-          <Button
-            title="MessageList"
-            onPress={() => setMode('messageList')}
-          />
-          <Button
-            title="Streaming only"
-            onPress={() => setMode('streaming')}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          {mode === 'messageList' ? (
-            <MessageListDemoScreen />
-          ) : (
-            <StreamingDemoScreen />
-          )}
+      <SafeAreaView style={demoStyles.root}>
+        <View style={demoStyles.appShell}>
+          <View style={demoStyles.toolbar}>
+            <Button
+              title="MessageList"
+              onPress={() => setMode('messageList')}
+            />
+            <Button
+              title="Streaming only"
+              onPress={() => setMode('streaming')}
+            />
+          </View>
+          <View style={demoStyles.content}>
+            {mode === 'messageList' ? (
+              <MessageListDemoScreen />
+            ) : (
+              <StreamingDemoScreen />
+            )}
+          </View>
         </View>
       </SafeAreaView>
     </>

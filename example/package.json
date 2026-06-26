@@ -4,18 +4,22 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "expo start --offline",
+    "start:online": "expo start",
+    "android": "expo start --offline --android",
+    "ios": "expo start --offline --ios",
+    "web": "expo start --offline --web"
   },
   "dependencies": {
     "@antdigital/agentui-react-native": "file:..",
+    "@expo/metro-runtime": "~4.0.1",
     "expo": "~52.0.28",
     "expo-asset": "~11.0.5",
     "expo-status-bar": "~2.0.1",
     "react": "18.3.1",
-    "react-native": "0.76.6"
+    "react-dom": "18.3.1",
+    "react-native": "0.76.6",
+    "react-native-web": "~0.19.13"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
