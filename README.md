@@ -46,6 +46,39 @@ export function MessageBody({ text }: { text: string }) {
 
 See [example/README.md](example/README.md) for running and debugging the streaming demo in React Native.
 
+### MessageList (minimal chat UI)
+
+Simplified counterpart to agentic-ui `BubbleList`: left/right bubbles, `FlatList`, and `MarkdownRenderer` per message. No avatars, actions, or thought chain.
+
+```tsx
+import {
+  MarkdownThemeProvider,
+  MessageList,
+  type ChatMessage,
+} from '@antdigital/agentui-react-native';
+
+const messages: ChatMessage[] = [
+  { id: '1', role: 'user', content: 'Hello' },
+  {
+    id: '2',
+    role: 'assistant',
+    content: '## Hi\n\nMarkdown **works**.',
+    streaming: false,
+    isFinished: true,
+  },
+];
+
+<MarkdownThemeProvider>
+  <MessageList
+    messages={messages}
+    autoScrollToBottom
+    throttleOptions={{ enabled: true }}
+  />
+</MarkdownThemeProvider>
+```
+
+Wrap the tree in `MarkdownThemeProvider` (same as standalone `MarkdownRenderer`). Optional `chatTheme` adjusts bubble colors and spacing.
+
 ## API
 
 | Export | Description |
@@ -55,6 +88,8 @@ See [example/README.md](example/README.md) for running and debugging the streami
 | `markdownToReactSync` | Sync parse (tests / one-off) |
 | `useContentThrottle` | Standalone throttle hook |
 | `MarkdownThemeProvider` / `defaultTheme` | Theming |
+| `MessageList` / `MessageBubble` | Minimal chat list |
+| `defaultChatTheme` / `ChatMessage` | List bubble styling and data shape |
 
 ## Develop
 

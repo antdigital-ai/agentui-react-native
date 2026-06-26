@@ -22,3 +22,16 @@ export type {
   RendererBlockProps,
 } from './MarkdownRenderer/types';
 export type { MarkdownTheme } from './theme/defaultTheme';
+export {
+  MessageList,
+  MessageBubble,
+  defaultChatTheme,
+  mergeChatTheme,
+} from './MessageList';
+export type {
+  ChatMessage,
+  ChatRole,
+  MessageListProps,
+  MessageBubbleProps,
+  ChatTheme,
+} from './MessageList';
