@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Metro (example)",
+      "cwd": "${workspaceFolder}/example",
+      "type": "reactnative",
+      "request": "attach",
+      "port": 8081
+    },
+    {
+      "name": "Debug Expo (example)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/example",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start"],
+      "console": "integratedTerminal"
+    }
+  ]
+}
