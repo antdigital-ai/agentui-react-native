@@ -4,8 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { demoStyles } from './demoStyles';
 import { MessageListDemoScreen } from './MessageListDemo';
 import { StreamingDemoScreen } from './StreamingDemo';
+import { DeepThinkingDemoScreen } from './DeepThinkingDemo';
 
-type DemoMode = 'messageList' | 'streaming';
+type DemoMode = 'messageList' | 'deepThinking' | 'streaming';
 
 export default function App() {
   const [mode, setMode] = useState<DemoMode>('messageList');
@@ -21,6 +22,10 @@ export default function App() {
               onPress={() => setMode('messageList')}
             />
             <Button
+              title="Deep thinking"
+              onPress={() => setMode('deepThinking')}
+            />
+            <Button
               title="Streaming only"
               onPress={() => setMode('streaming')}
             />
@@ -28,6 +33,8 @@ export default function App() {
           <View style={demoStyles.content}>
             {mode === 'messageList' ? (
               <MessageListDemoScreen />
+            ) : mode === 'deepThinking' ? (
+              <DeepThinkingDemoScreen />
             ) : (
               <StreamingDemoScreen />
             )}

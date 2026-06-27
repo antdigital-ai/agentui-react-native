@@ -29,10 +29,26 @@ export {
   defaultChatTheme,
   mergeChatTheme,
 } from './MessageList';
+export {
+  DeepThinking,
+  ThinkChevron,
+  ThinkGlyph,
+  defaultDeepThinkingTheme,
+  defaultDeepThinkingLabels,
+  deepThinkingBodyMarkdownTheme,
+  mergeDeepThinkingTheme,
+} from './DeepThinking';
 export type {
   ChatMessage,
   ChatRole,
   MessageListProps,
   MessageBubbleProps,
   ChatTheme,
+  ChatMessageThinking,
 } from './MessageList';
+export type {
+  DeepThinkingProps,
+  DeepThinkingStatus,
+  DeepThinkingTheme,
+  DeepThinkingLabels,
+} from './DeepThinking';

@@ -8,3 +8,4 @@ export type {
   MessageListProps,
   MessageBubbleProps,
 } from './types';
+export type { ChatMessageThinking } from '../DeepThinking/types';

@@ -8,6 +8,7 @@ import {
 import { demoStyles } from './demoStyles';
 import {
   FIGMA_HOME_ASSISTANT_MARKDOWN,
+  FIGMA_HOME_THINKING_BODY,
   FIGMA_HOME_USER_MESSAGE,
 } from './figmaHomeDemoContent';
 
@@ -22,6 +23,11 @@ const INITIAL: ChatMessage[] = [
     role: 'assistant',
     content: FIGMA_HOME_ASSISTANT_MARKDOWN,
     isFinished: true,
+    thinking: {
+      status: 'completed',
+      body: FIGMA_HOME_THINKING_BODY,
+      defaultExpanded: false,
+    },
   },
 ];
 
@@ -41,6 +47,7 @@ export function MessageListDemoScreen() {
         content: '',
         streaming: true,
         isFinished: false,
+        thinking: { status: 'thinking' },
       },
     ]);
 
@@ -56,6 +63,11 @@ export function MessageListDemoScreen() {
                   content: STREAM_REPLY,
                   streaming: false,
                   isFinished: true,
+                  thinking: {
+                    status: 'completed',
+                    body: FIGMA_HOME_THINKING_BODY,
+                    defaultExpanded: false,
+                  },
                 }
               : m,
           ),

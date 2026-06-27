@@ -1,8 +1,15 @@
 /**
  * Copy from Figma 首页 Home —「Crypto Analysis - crypto」chat `675:23865`.
- * Rich blocks (thinking chip, chart, action icons) are not in MessageList; text matches design.
+ * Assistant reply text matches design; think row uses `ChatMessage.thinking` + `DeepThinking`.
  */
 export const FIGMA_HOME_USER_MESSAGE = 'Please help me analyze the assets';
+
+/** Expandable reasoning — Figma think body `675:23594` (12px caption, lh 1.8). */
+export const FIGMA_HOME_THINKING_BODY = `Pull BTC spot and perp metrics (volume, OI, funding).
+
+Cross-check portfolio weight for ETH and near-term unlocks.
+
+Draft bull/bear bullets aligned with ETF and L2 narrative.`;
 
 export const FIGMA_HOME_ASSISTANT_MARKDOWN = `Here is my analysis of BTC
 

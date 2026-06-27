@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Platform, View } from 'react-native';
+import { DeepThinking } from '../DeepThinking/DeepThinking';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import { agenticColors } from '../theme/agenticTokens';
@@ -89,7 +90,19 @@ export function MessageBubble({
         width: isUser ? undefined : '100%',
       }}
     >
-      <View style={bubbleStyle}>
+      <View style={[bubbleStyle, !isUser ? { width: '100%' as const } : null]}>
+        {!isUser && message.thinking ? (
+          <DeepThinking
+            status={message.thinking.status}
+            label={message.thinking.label}
+            body={message.thinking.body}
+            expandable={message.thinking.expandable}
+            defaultExpanded={message.thinking.defaultExpanded}
+            labels={message.thinking.labels}
+            layoutDensity={layoutDensity}
+            testID="message-deep-thinking"
+          />
+        ) : null}
         <MarkdownRenderer
           content={message.content}
           streaming={message.streaming}

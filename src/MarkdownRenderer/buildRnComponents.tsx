@@ -186,20 +186,34 @@ export const buildRnComponents = ({
       return applyEleRender(eleRender, 'a', props as MarkdownRendererEleProps, defaultDom);
     },
 
-    ul: (props) => (
-      <View
-        testID="markdown-list-unordered"
-        style={{
-          marginTop: theme.spacing.listBlockMarginTop,
-          marginBottom: theme.spacing.listBlockMarginBottom,
-          paddingLeft: 0,
-        }}
-      >
-        {props.children}
-      </View>
-    ),
+    ul: (props) => {
+      const items = React.Children.toArray(props.children).filter(
+        React.isValidElement,
+      );
+      const lastIndex = items.length - 1;
+      return (
+        <View
+          testID="markdown-list-unordered"
+          style={{
+            marginTop: theme.spacing.listBlockMarginTop,
+            marginBottom: theme.spacing.listBlockMarginBottom,
+            paddingLeft: 0,
+          }}
+        >
+          {items.map((child, index) => {
+            if (!React.isValidElement(child)) return child;
+            return React.cloneElement(child as React.ReactElement, {
+              isLastListItem: index === lastIndex,
+            });
+          })}
+        </View>
+      );
+    },
     ol: (props) => {
-      const items = React.Children.toArray(props.children);
+      const items = React.Children.toArray(props.children).filter(
+        React.isValidElement,
+      );
+      const lastIndex = items.length - 1;
       return (
         <View
           testID="markdown-list-ordered"
@@ -213,6 +227,7 @@ export const buildRnComponents = ({
             if (!React.isValidElement(child)) return child;
             return React.cloneElement(child as React.ReactElement, {
               listIndex: index + 1,
+              isLastListItem: index === lastIndex,
             });
           })}
         </View>
@@ -220,16 +235,18 @@ export const buildRnComponents = ({
     },
 
     li: (props) => {
-      const { children, checked, listIndex } = props as RendererBlockProps & {
+      const { children, checked, listIndex, isLastListItem } = props as RendererBlockProps & {
         checked?: boolean;
         listIndex?: number;
+        isLastListItem?: boolean;
       };
       const isTask = typeof checked === 'boolean';
+      const itemGap = isLastListItem ? 0 : theme.spacing.listItemGap;
       const defaultDom = (
         <View
           style={{
             flexDirection: 'row',
-            marginBottom: theme.spacing.listItemGap,
+            marginBottom: itemGap,
             marginTop: 0,
             paddingLeft: 0,
           }}

@@ -1,5 +1,6 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { ContentThrottleOptions } from '../MarkdownRenderer/types';
+import type { ChatMessageThinking } from '../DeepThinking/types';
 import type { LayoutDensity } from '../theme/layout';
 import type { ChatTheme } from './chatTheme';
 
@@ -12,6 +13,8 @@ export interface ChatMessage {
   /** Typically only the last assistant message in a list */
   streaming?: boolean;
   isFinished?: boolean;
+  /** Figma Home —「深度思考 / Thinking Completed」header above assistant markdown */
+  thinking?: ChatMessageThinking;
 }
 
 export interface MessageListProps {

@@ -30,8 +30,10 @@ export function MessageList({
     [chatThemePartial, compact],
   );
 
-  const lastContent = messages[messages.length - 1]?.content ?? '';
-  const lastId = messages[messages.length - 1]?.id ?? '';
+  const lastMessage = messages[messages.length - 1];
+  const lastContent = lastMessage?.content ?? '';
+  const lastId = lastMessage?.id ?? '';
+  const scrollOnResize = autoScrollToBottom && lastMessage?.streaming === true;
 
   useEffect(() => {
     if (!autoScrollToBottom || messages.length === 0) return;
@@ -77,7 +79,7 @@ export function MessageList({
       ]}
       keyboardShouldPersistTaps="handled"
       onContentSizeChange={() => {
-        if (autoScrollToBottom && messages.length > 0) {
+        if (scrollOnResize && messages.length > 0) {
           listRef.current?.scrollToEnd({ animated: false });
         }
       }}
