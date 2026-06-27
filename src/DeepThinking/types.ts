@@ -31,6 +31,8 @@ export interface DeepThinkingProps {
   /** Replace default AI glyph (32×32). */
   icon?: React.ReactNode;
   accessibilityLabel?: string;
+  /** Figma `1182:19754` completed row has no arrow; enable for loading/other frames. */
+  showExpandChevron?: boolean;
 }
 
 /** Attached to assistant `ChatMessage` for MessageList integration */
@@ -42,4 +44,6 @@ export interface ChatMessageThinking {
   expandable?: boolean;
   defaultExpanded?: boolean;
   labels?: DeepThinkingLabels;
+  /** Default false — Figma Crypto completed think row has no chevron. */
+  showExpandChevron?: boolean;
 }

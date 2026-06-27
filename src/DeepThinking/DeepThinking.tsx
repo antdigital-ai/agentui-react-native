@@ -46,6 +46,7 @@ export function DeepThinking({
   testID = 'deep-thinking',
   icon,
   accessibilityLabel,
+  showExpandChevron = false,
 }: DeepThinkingProps) {
   const theme = useMemo(
     () => mergeDeepThinkingTheme(themePartial),
@@ -70,7 +71,8 @@ export function DeepThinking({
   }, [expandable, expanded, setExpanded]);
 
   const title = resolveLabel(status, label, labels);
-  const showChevron = expandable && hasBody;
+  const showChevron =
+    showExpandChevron && expandable && hasBody;
 
   const labelTextStyle: StyleProp<TextStyle> = [
     theme.label,

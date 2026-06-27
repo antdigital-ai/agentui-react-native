@@ -100,6 +100,7 @@ export function MessageBubble({
             defaultExpanded={message.thinking.defaultExpanded}
             labels={message.thinking.labels}
             layoutDensity={layoutDensity}
+            showExpandChevron={message.thinking.showExpandChevron}
             testID="message-deep-thinking"
           />
         ) : null}
