@@ -9,29 +9,9 @@ import {
   MarkdownThemeProvider,
 } from '@antdigital/agentui-react-native';
 import { demoStyles } from './demoStyles';
+import { FIGMA_HOME_ASSISTANT_MARKDOWN } from './figmaHomeDemoContent';
 
-const SAMPLE = `# Agent reply
-
-Here is **bold**, *italic*, and ~~strike~~.
-
-- Item one
-- Item two
-
-1. First
-2. Second
-
-\`\`\`javascript
-function hello() {
-  console.log('streaming');
-}
-\`\`\`
-
-| Col A | Col B |
-| ----- | ----- |
-| 1     | 2     |
-
-> A quote line
-`;
+const SAMPLE = FIGMA_HOME_ASSISTANT_MARKDOWN;
 
 export function StreamingDemoScreen() {
   const [content, setContent] = useState('');

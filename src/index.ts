@@ -21,7 +21,8 @@ export type {
   MarkdownRemarkPlugin,
   RendererBlockProps,
 } from './MarkdownRenderer/types';
-export type { MarkdownTheme, MarkdownThemeOverride } from './theme/defaultTheme';
+export { MOBILE_LAYOUT_BREAKPOINT, type LayoutDensity } from './theme/layout';
+export { compactChatTheme, compactMarkdownTheme } from './theme/mobileTheme';
 export {
   MessageList,
   MessageBubble,

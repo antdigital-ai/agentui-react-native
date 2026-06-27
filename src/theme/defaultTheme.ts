@@ -1,6 +1,10 @@
 import type { TextStyle, ViewStyle } from 'react-native';
 import { agenticColors, agenticSpacing } from './agenticTokens';
 import { fontFamilies } from './fonts';
+import {
+  headingMarginsDesktop,
+  type HeadingMarginMap,
+} from './headingMargins';
 
 export interface MarkdownTheme {
   colors: {
@@ -42,6 +46,7 @@ export interface MarkdownTheme {
     headingMarginBottom: number;
   };
   blockquote: ViewStyle;
+  headingMarginByLevel: HeadingMarginMap;
 }
 
 export type MarkdownThemeOverride = {
@@ -49,6 +54,7 @@ export type MarkdownThemeOverride = {
   typography?: Partial<MarkdownTheme['typography']>;
   spacing?: Partial<MarkdownTheme['spacing']>;
   blockquote?: Partial<ViewStyle>;
+  headingMarginByLevel?: Partial<HeadingMarginMap>;
 };
 
 export const defaultTheme: MarkdownTheme = {
@@ -96,6 +102,7 @@ export const defaultTheme: MarkdownTheme = {
     marginTop: 0,
     marginBottom: 0,
   },
+  headingMarginByLevel: headingMarginsDesktop,
 };
 
 export function mergeTheme(
@@ -108,5 +115,8 @@ export function mergeTheme(
     typography: { ...base.typography, ...partial.typography },
     spacing: { ...base.spacing, ...partial.spacing },
     blockquote: { ...base.blockquote, ...partial.blockquote },
+    headingMarginByLevel: partial.headingMarginByLevel
+      ? { ...base.headingMarginByLevel, ...partial.headingMarginByLevel }
+      : base.headingMarginByLevel,
   };
 }

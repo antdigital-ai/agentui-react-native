@@ -5,6 +5,8 @@ import React, {
 } from 'react';
 import { View } from 'react-native';
 import { MarkdownThemeProvider } from '../theme/MarkdownThemeProvider';
+import { compactMarkdownTheme, mergeMarkdownThemeOverrides } from '../theme/mobileTheme';
+import { useCompactLayout } from '../theme/useCompactLayout';
 import type {
   MarkdownRendererProps,
   MarkdownRendererRef,
@@ -26,7 +28,6 @@ const MarkdownRendererInner = forwardRef<
     linkConfig,
     eleRender,
     components,
-    theme,
     testID = 'markdown-renderer',
   } = props;
 
@@ -50,7 +51,6 @@ const MarkdownRendererInner = forwardRef<
     streaming,
     components,
     eleRender,
-    theme,
     contentRevisionSource: streaming ? sourceText : undefined,
   });
 
@@ -67,9 +67,15 @@ export const MarkdownRenderer = forwardRef<
   MarkdownRendererRef,
   MarkdownRendererProps
 >((props, ref) => {
+  const { layoutDensity = 'auto', theme } = props;
+  const compact = useCompactLayout(layoutDensity);
   const themeProvider = useMemo(
-    () => props.theme,
-    [props.theme],
+    () =>
+      mergeMarkdownThemeOverrides(
+        compact ? compactMarkdownTheme : undefined,
+        theme,
+      ),
+    [compact, theme],
   );
   return (
     <MarkdownThemeProvider theme={themeProvider}>

@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import type { MarkdownTheme } from '../theme/defaultTheme';
-import { headingMargins } from '../theme/headingMargins';
+import { headingMarginsDesktop, type HeadingLevel } from '../theme/headingMargins';
 import type {
   MarkdownRendererEleProps,
   MarkdownRendererProps,
@@ -55,7 +55,9 @@ export const buildRnComponents = ({
     (props) => {
       const { children } = props;
       const typo = theme.typography[`h${level}`];
-      const margins = headingMargins[level];
+      const levelKey = level as HeadingLevel;
+      const margins =
+        theme.headingMarginByLevel[levelKey] ?? headingMarginsDesktop[levelKey];
       const defaultDom = (
         <Text
           accessibilityRole="header"

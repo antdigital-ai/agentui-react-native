@@ -1,7 +1,8 @@
 import type React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { Plugin } from 'unified';
-import type { MarkdownTheme, MarkdownThemeOverride } from '../theme/defaultTheme';
+import type { MarkdownThemeOverride } from '../theme/defaultTheme';
+import type { LayoutDensity } from '../theme/layout';
 
 export interface ContentThrottleOptions {
   charsPerFrame?: number;
@@ -46,6 +47,8 @@ export interface MarkdownRendererProps {
   ) => React.ReactNode;
   components?: Record<string, React.ComponentType<RendererBlockProps>>;
   theme?: MarkdownThemeOverride;
+  /** `auto`: phone native + web viewport under 768px use compact markdown. */
+  layoutDensity?: LayoutDensity;
   testID?: string;
 }
 

@@ -9,15 +9,21 @@ export function MessageBubble({
   message,
   chatTheme,
   throttleOptions,
+  layoutDensity = 'auto',
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const figma = agenticColors.figmaHome;
+  const assistantPadding =
+    chatTheme.assistantBubblePadding ?? chatTheme.bubblePadding;
+  const isTransparentAssistant =
+    chatTheme.assistantBubbleBackground === 'transparent';
 
   const bubbleStyle = useMemo(
     () => ({
       maxWidth: isUser
         ? chatTheme.userBubbleMaxWidth
         : chatTheme.assistantBubbleMaxWidth,
-      padding: chatTheme.bubblePadding,
+      padding: isUser ? chatTheme.bubblePadding : assistantPadding,
       backgroundColor: isUser
         ? chatTheme.userBubbleBackground
         : chatTheme.assistantBubbleBackground,
@@ -29,17 +35,29 @@ export function MessageBubble({
             borderBottomLeftRadius: chatTheme.bubbleRadius,
           }
         : { borderRadius: chatTheme.bubbleRadius }),
-      ...(Platform.OS === 'web' && !isUser
+      ...(Platform.OS === 'web' && !isUser && !isTransparentAssistant
         ? {
             boxShadow: '0 1px 2px rgba(20, 22, 28, 0.06)',
           }
         : null),
     }),
-    [chatTheme, isUser],
+    [assistantPadding, chatTheme, isTransparentAssistant, isUser],
   );
 
   const markdownTheme = useMemo((): MarkdownThemeOverride | undefined => {
     if (!isUser) return undefined;
+    const onFigmaPurple =
+      chatTheme.userBubbleBackground === figma.userBubbleBackground;
+    if (onFigmaPurple) {
+      return {
+        colors: {
+          codeBackground: figma.userBubbleCodeBackground,
+          blockquoteBorder: figma.userBubbleBorderAccent,
+          hr: figma.userBubbleHr,
+          linkUnderline: figma.userBubbleLinkUnderline,
+        },
+      };
+    }
     return {
       colors: {
         codeBackground: agenticColors.userBubbleCodeBackground,
@@ -48,7 +66,7 @@ export function MessageBubble({
         linkUnderline: agenticColors.userBubbleLinkUnderline,
       },
     };
-  }, [isUser]);
+  }, [chatTheme.userBubbleBackground, figma, isUser]);
 
   return (
     <View
@@ -57,6 +75,7 @@ export function MessageBubble({
         flexDirection: 'row',
         justifyContent: isUser ? 'flex-end' : 'flex-start',
         marginBottom: chatTheme.bubbleGap,
+        width: isUser ? undefined : '100%',
       }}
     >
       <View style={bubbleStyle}>
@@ -66,6 +85,7 @@ export function MessageBubble({
           isFinished={message.isFinished}
           throttleOptions={throttleOptions}
           theme={markdownTheme}
+          layoutDensity={layoutDensity}
         />
       </View>
     </View>

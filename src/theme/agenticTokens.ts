@@ -16,6 +16,19 @@ export const agenticColors = {
   userBubbleCodeBackground: 'rgba(22, 119, 255, 0.12)',
   userBubbleHr: 'rgba(22, 119, 255, 0.35)',
   userBubbleLinkUnderline: 'rgba(22, 119, 255, 0.45)',
+  /** Figma 首页 Home — Chat bubbles (`1180:18838`) & chat frame `675:23865` */
+  figmaHome: {
+    text: '#1e1f1f',
+    textCaption: 'rgba(0, 0, 0, 0.27)',
+    userBubbleBackground: 'rgba(90, 0, 255, 0.07)',
+    userBubbleCodeBackground: 'rgba(90, 0, 255, 0.12)',
+    userBubbleHr: 'rgba(90, 0, 255, 0.25)',
+    userBubbleLinkUnderline: 'rgba(90, 0, 255, 0.35)',
+    userBubbleBorderAccent: '#7c33d7',
+    contentWidth: 335,
+    horizontalGutter: 20,
+    userBubbleMaxWidth: 280,
+  },
 } as const;
 
 export const agenticSpacing = {

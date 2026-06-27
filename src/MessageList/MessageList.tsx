@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { FlatList, Platform, type ListRenderItem } from 'react-native';
+import { compactChatTheme } from '../theme/mobileTheme';
+import { useCompactLayout } from '../theme/useCompactLayout';
+import type { LayoutDensity } from '../theme/layout';
 import { mergeChatTheme, defaultChatTheme } from './chatTheme';
 import { MessageBubble } from './MessageBubble';
 import type { ChatMessage, MessageListProps } from './types';
@@ -11,12 +14,19 @@ export function MessageList({
   autoScrollToBottom = true,
   throttleOptions,
   chatTheme: chatThemePartial,
+  layoutDensity = 'auto',
   testID = 'message-list',
 }: MessageListProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const compact = useCompactLayout(layoutDensity);
   const chatTheme = useMemo(
-    () => mergeChatTheme(defaultChatTheme, chatThemePartial),
-    [chatThemePartial],
+    () =>
+      mergeChatTheme(
+        defaultChatTheme,
+        compact ? compactChatTheme : undefined,
+        chatThemePartial,
+      ),
+    [chatThemePartial, compact],
   );
 
   const lastContent = messages[messages.length - 1]?.content ?? '';
@@ -35,6 +45,7 @@ export function MessageList({
       message={item}
       chatTheme={chatTheme}
       throttleOptions={throttleOptions}
+      layoutDensity={layoutDensity}
     />
   );
 

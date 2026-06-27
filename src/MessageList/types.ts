@@ -1,5 +1,6 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { ContentThrottleOptions } from '../MarkdownRenderer/types';
+import type { LayoutDensity } from '../theme/layout';
 import type { ChatTheme } from './chatTheme';
 
 export type ChatRole = 'user' | 'assistant';
@@ -21,6 +22,8 @@ export interface MessageListProps {
   autoScrollToBottom?: boolean;
   throttleOptions?: ContentThrottleOptions;
   chatTheme?: Partial<ChatTheme>;
+  /** `auto`: compact bubbles on native and narrow web (see MOBILE_LAYOUT_BREAKPOINT). */
+  layoutDensity?: LayoutDensity;
   testID?: string;
 }
 
@@ -28,4 +31,5 @@ export interface MessageBubbleProps {
   message: ChatMessage;
   chatTheme: ChatTheme;
   throttleOptions?: ContentThrottleOptions;
+  layoutDensity?: LayoutDensity;
 }

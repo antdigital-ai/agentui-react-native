@@ -6,32 +6,26 @@ import {
   type ChatMessage,
 } from '@antdigital/agentui-react-native';
 import { demoStyles } from './demoStyles';
+import {
+  FIGMA_HOME_ASSISTANT_MARKDOWN,
+  FIGMA_HOME_USER_MESSAGE,
+} from './figmaHomeDemoContent';
 
 const INITIAL: ChatMessage[] = [
   {
     id: '1',
     role: 'user',
-    content: '用 Markdown 介绍一下 React Native',
+    content: FIGMA_HOME_USER_MESSAGE,
   },
   {
     id: '2',
     role: 'assistant',
-    content: '## React Native\n\n- 跨平台\n- 使用 **JavaScript** 与原生 UI',
+    content: FIGMA_HOME_ASSISTANT_MARKDOWN,
     isFinished: true,
   },
 ];
 
-const STREAM_REPLY = `# 回复
-
-流式输出示例：
-
-1. 第一点
-2. 第二点
-
-\`\`\`ts
-const x = 1;
-\`\`\`
-`;
+const STREAM_REPLY = FIGMA_HOME_ASSISTANT_MARKDOWN;
 
 export function MessageListDemoScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL);
@@ -92,6 +86,7 @@ export function MessageListDemoScreen() {
         <MessageList
           style={demoStyles.content}
           messages={messages}
+          layoutDensity="auto"
           throttleOptions={{ enabled: true }}
         />
       </View>

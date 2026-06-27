@@ -5,6 +5,8 @@ export interface ChatTheme {
   listPadding: number;
   bubbleGap: number;
   bubblePadding: number;
+  /** Assistant rows (Figma Home: flush markdown, no inner padding). */
+  assistantBubblePadding?: number;
   bubbleRadius: number;
   userBubbleMaxWidth: DimensionValue;
   assistantBubbleMaxWidth: DimensionValue;
@@ -25,8 +27,10 @@ export const defaultChatTheme: ChatTheme = {
 
 export function mergeChatTheme(
   base: ChatTheme,
-  partial?: Partial<ChatTheme>,
+  ...partials: (Partial<ChatTheme> | undefined)[]
 ): ChatTheme {
-  if (!partial) return base;
-  return { ...base, ...partial };
+  return partials.reduce<ChatTheme>(
+    (acc, partial) => (partial ? { ...acc, ...partial } : acc),
+    base,
+  );
 }
