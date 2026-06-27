@@ -15,7 +15,7 @@ export const demoStyles = StyleSheet.create({
     flex: 1,
     width: '100%',
     ...(Platform.OS === 'web'
-      ? { maxWidth: 720, alignSelf: 'center' as const, minHeight: 0 }
+      ? { maxWidth: 375, alignSelf: 'center' as const, minHeight: 0 }
       : null),
   },
   toolbar: {
@@ -37,7 +37,7 @@ export const demoStyles = StyleSheet.create({
     minHeight: 0,
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 32,
   },
   footerHint: {

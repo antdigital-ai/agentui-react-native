@@ -19,6 +19,7 @@ export const agenticColors = {
   /** Figma 首页 Home — Chat bubbles (`1180:18838`) & chat frame `675:23865` */
   figmaHome: {
     text: '#1e1f1f',
+    textSecondary: 'rgba(0, 2, 2, 0.61)',
     textCaption: 'rgba(0, 0, 0, 0.27)',
     userBubbleBackground: 'rgba(90, 0, 255, 0.07)',
     userBubbleCodeBackground: 'rgba(90, 0, 255, 0.12)',
@@ -30,6 +31,8 @@ export const agenticColors = {
     userBubbleMaxWidth: 280,
   },
 } as const;
+
+export { figmaHomeSpacing } from './figmaHomeSpacing';
 
 export const agenticSpacing = {
   margin1x: 4,

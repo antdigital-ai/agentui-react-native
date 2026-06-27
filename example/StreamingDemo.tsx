@@ -62,6 +62,7 @@ export function StreamingDemoScreen() {
             content={content}
             streaming={streaming}
             isFinished={finished}
+            layoutDensity="compact"
             throttleOptions={{ enabled: true }}
           />
         </ScrollView>

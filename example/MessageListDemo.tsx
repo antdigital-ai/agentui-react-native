@@ -86,7 +86,7 @@ export function MessageListDemoScreen() {
         <MessageList
           style={demoStyles.content}
           messages={messages}
-          layoutDensity="auto"
+          layoutDensity="compact"
           throttleOptions={{ enabled: true }}
         />
       </View>

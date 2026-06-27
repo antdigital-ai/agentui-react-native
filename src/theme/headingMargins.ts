@@ -1,4 +1,5 @@
 import { agenticSpacing } from './agenticTokens';
+import { figmaHomeSpacing } from './figmaHomeSpacing';
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -24,15 +25,16 @@ export const headingMarginsDesktop: HeadingMarginMap = {
 };
 
 /**
- * Figma Home chat `675:23865` — section titles (16px / lh 1.2) + 12px gap to body.
+ * Figma Home chat `675:23865` — section titles + block gaps.
+ * h4: 24 between sections, 12 title→body; h5 subtext; h6 disclaimer.
  */
 export const headingMarginsMobile: HeadingMarginMap = {
-  1: { marginTop: 20, marginBottom: 12 },
-  2: { marginTop: 20, marginBottom: 12 },
-  3: { marginTop: 16, marginBottom: 12 },
-  4: { marginTop: 16, marginBottom: 12 },
-  5: { marginTop: 12, marginBottom: 8 },
-  6: { marginTop: 12, marginBottom: 8 },
+  1: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
+  2: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
+  3: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
+  4: { marginTop: figmaHomeSpacing.inSectionTitleGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
+  5: { marginTop: 4, marginBottom: 8 },
+  6: { marginTop: figmaHomeSpacing.footerBlockGap, marginBottom: 0 },
 };
 
 /** @deprecated use headingMarginsDesktop */

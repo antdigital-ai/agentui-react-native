@@ -3,6 +3,9 @@ import { agenticColors } from '../theme/agenticTokens';
 
 export interface ChatTheme {
   listPadding: number;
+  listPaddingTop?: number;
+  listPaddingBottom?: number;
+  listPaddingHorizontal?: number;
   bubbleGap: number;
   bubblePadding: number;
   /** Assistant rows (Figma Home: flush markdown, no inner padding). */

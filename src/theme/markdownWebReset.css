@@ -1,0 +1,84 @@
+/**
+ * Strip user-agent defaults inside markdown (React Native Web renders div/span/a).
+ * Import before app theme CSS. Example: example/global.css
+ */
+.agentui-markdown,
+.agentui-markdown * {
+  box-sizing: border-box;
+}
+
+.agentui-markdown div,
+.agentui-markdown span,
+.agentui-markdown p,
+.agentui-markdown h1,
+.agentui-markdown h2,
+.agentui-markdown h3,
+.agentui-markdown h4,
+.agentui-markdown h5,
+.agentui-markdown h6,
+.agentui-markdown li,
+.agentui-markdown ul,
+.agentui-markdown ol,
+.agentui-markdown a,
+.agentui-markdown pre,
+.agentui-markdown code,
+.agentui-markdown table,
+.agentui-markdown th,
+.agentui-markdown td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: inherit;
+  vertical-align: baseline;
+  background: transparent;
+  list-style: none;
+}
+
+.agentui-markdown a {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.agentui-markdown img {
+  max-width: 100%;
+  height: auto;
+  border: 0;
+}
+
+.agentui-message-list,
+.agentui-message-list * {
+  box-sizing: border-box;
+}
+
+.agentui-message-list div,
+.agentui-message-list span,
+.agentui-message-list a,
+.agentui-message-list button {
+  margin: 0;
+  font: inherit;
+}
+
+.agentui-message-bubble,
+.agentui-message-bubble * {
+  box-sizing: border-box;
+}
+
+.agentui-message-bubble div,
+.agentui-message-bubble span,
+.agentui-message-bubble a {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  list-style: none;
+  text-decoration: none;
+}

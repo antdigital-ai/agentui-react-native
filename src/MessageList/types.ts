@@ -32,4 +32,5 @@ export interface MessageBubbleProps {
   chatTheme: ChatTheme;
   throttleOptions?: ContentThrottleOptions;
   layoutDensity?: LayoutDensity;
+  isLast?: boolean;
 }

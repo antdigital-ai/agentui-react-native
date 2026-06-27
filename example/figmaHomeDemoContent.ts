@@ -12,11 +12,11 @@ Largest smart-contract platform by TVL; ETH is its native gas and staking asset.
 
 **BTC-PERP**
 
-Subtext
+##### Subtext
 
 **72,732.45** · -2.63%
 
-| | |
+| header | value |
 | --- | --- |
 | 24H Volume | $456.20 M |
 | Open Interest | $89.40 M |
@@ -43,8 +43,8 @@ Perp · Trade
 
 You hold ETH (~28% of portfolio). An unlock in ~7d adds near-term supply; portfolio sensitivity to ETH is elevated.
 
-- CPI’s effect on crypto?
-- What’s ETF net inflow and outflow?
+- CPI's effect on crypto?
+- What's ETF net inflow and outflow?
 
-以上服务由TopNod提供，不是投资建议
+###### 以上服务由TopNod提供，不是投资建议
 `;

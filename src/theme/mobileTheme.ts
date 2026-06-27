@@ -1,18 +1,24 @@
 import type { ChatTheme } from '../MessageList/chatTheme';
 import type { MarkdownThemeOverride } from './defaultTheme';
 import { agenticColors } from './agenticTokens';
-import { fontFamilies } from './fonts';
+import { figmaHomeSpacing } from './figmaHomeSpacing';
+import { figmaHomeTextStyles } from './figmaHomeTypography';
+import { figmaHomeCodeFontFamily } from './fonts';
 import { headingMarginsMobile } from './headingMargins';
 
 const figma = agenticColors.figmaHome;
+const t = figmaHomeTextStyles;
 
 /**
  * Chat chrome — Figma「Crypto Analysis - crypto」`675:23865` (375×812).
  * User: `Chat bubbles` 280px / 12px pad / purple tint; assistant: full 335px, no card.
  */
 export const compactChatTheme: Partial<ChatTheme> = {
-  listPadding: figma.horizontalGutter,
-  bubbleGap: 16,
+  listPadding: figmaHomeSpacing.chatPaddingHorizontal,
+  listPaddingTop: figmaHomeSpacing.chatPaddingTop,
+  listPaddingBottom: figmaHomeSpacing.chatPaddingBottom,
+  listPaddingHorizontal: figmaHomeSpacing.chatPaddingHorizontal,
+  bubbleGap: figmaHomeSpacing.messageGap,
   bubblePadding: 12,
   assistantBubblePadding: 0,
   bubbleRadius: 12,
@@ -22,39 +28,46 @@ export const compactChatTheme: Partial<ChatTheme> = {
   assistantBubbleBackground: 'transparent',
 };
 
-/** 段落/base: 14px · lh 1.8 · #1e1f1f; 标题/h4: 16px bold · lh 1.2 */
+/** Figma: 段落/base 14·1.8, 标题/h4 16·1.2, 正文/lg-强调 16·600, 正文/sm 12 */
 export const compactMarkdownTheme: MarkdownThemeOverride = {
   colors: {
     text: figma.text,
-    textMuted: figma.textCaption,
+    textMuted: figma.textSecondary,
     link: figma.text,
     codeText: figma.text,
   },
   typography: {
-    body: {
-      fontSize: 14,
-      lineHeight: 25,
-      fontWeight: '500',
-      ...fontFamilies.body,
+    body: { ...t.body, color: figma.text },
+    emphasis: { ...t.emphasis, color: figma.text },
+    caption: { ...t.caption, color: figma.textCaption },
+    tableLabel: { ...t.label },
+    tableValue: { ...t.titleLg, color: figma.text },
+    h1: { ...t.sectionTitle, color: figma.text },
+    h2: { ...t.sectionTitle, color: figma.text },
+    h3: { ...t.sectionTitle, color: figma.text },
+    h4: { ...t.sectionTitle, color: figma.text },
+    h5: { ...t.caption, color: figma.textSecondary, textAlign: 'left' },
+    h6: {
+      ...t.caption,
+      color: figma.textCaption,
+      textAlign: 'center',
     },
-    h1: { fontSize: 20, lineHeight: 24, fontWeight: '700', ...fontFamilies.body },
-    h2: { fontSize: 18, lineHeight: 22, fontWeight: '700', ...fontFamilies.body },
-    h3: { fontSize: 16, lineHeight: 19, fontWeight: '700', ...fontFamilies.body },
-    h4: { fontSize: 16, lineHeight: 19, fontWeight: '700', ...fontFamilies.body },
-    h5: { fontSize: 14, lineHeight: 19, fontWeight: '700', ...fontFamilies.body },
-    h6: { fontSize: 14, lineHeight: 19, fontWeight: '700', ...fontFamilies.body },
-    code: { fontSize: 13, lineHeight: 18, ...fontFamilies.code },
-    inlineCode: { fontSize: 13, ...fontFamilies.code },
+    code: { fontSize: 13, lineHeight: 18, fontWeight: '500', ...figmaHomeCodeFontFamily },
+    inlineCode: { fontSize: 13, fontWeight: '500', ...figmaHomeCodeFontFamily },
   },
   spacing: {
-    paragraphGap: 8,
-    listIndent: 16,
-    listItemGap: 4,
-    blockquotePadding: 8,
-    codeBlockPadding: 12,
-    tableCellPadding: 8,
-    headingMarginTop: 16,
-    headingMarginBottom: 12,
+    paragraphGap: figmaHomeSpacing.listItemGap,
+    leadingParagraphGap: figmaHomeSpacing.contentBlockGap,
+    listIndent: figmaHomeSpacing.listNestedIndent,
+    listItemGap: figmaHomeSpacing.listItemGap,
+    listBlockMarginTop: figmaHomeSpacing.inSectionTitleGap,
+    listBlockMarginBottom: figmaHomeSpacing.inSectionTitleGap,
+    blockquotePadding: figmaHomeSpacing.inSectionTitleGap,
+    codeBlockPadding: figmaHomeSpacing.inSectionTitleGap,
+    tableCellPadding: figmaHomeSpacing.inSectionTitleGap,
+    tableBlockMarginVertical: figmaHomeSpacing.inSectionTitleGap,
+    headingMarginTop: figmaHomeSpacing.sectionGap,
+    headingMarginBottom: figmaHomeSpacing.inSectionTitleGap,
   },
   headingMarginByLevel: headingMarginsMobile,
 };

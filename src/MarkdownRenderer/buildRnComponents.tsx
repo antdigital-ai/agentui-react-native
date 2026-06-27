@@ -42,6 +42,11 @@ const textColor = (theme: MarkdownTheme): TextStyle => ({
   ...theme.typography.body,
 });
 
+const emphasisStyle = (theme: MarkdownTheme): TextStyle => ({
+  color: theme.colors.text,
+  ...theme.typography.emphasis,
+});
+
 export const buildRnComponents = ({
   theme,
   linkConfig,
@@ -49,6 +54,9 @@ export const buildRnComponents = ({
   userComponents,
 }: BuildOptions): Record<string, React.ComponentType<RendererBlockProps>> => {
   const body = textColor(theme);
+  const emphasis = emphasisStyle(theme);
+  const sectionHeadingIndex: Partial<Record<HeadingLevel, number>> = {};
+  let paragraphIndex = 0;
 
   const heading =
     (level: 1 | 2 | 3 | 4 | 5 | 6): React.FC<RendererBlockProps> =>
@@ -58,15 +66,19 @@ export const buildRnComponents = ({
       const levelKey = level as HeadingLevel;
       const margins =
         theme.headingMarginByLevel[levelKey] ?? headingMarginsDesktop[levelKey];
+      const seen = sectionHeadingIndex[levelKey] ?? 0;
+      sectionHeadingIndex[levelKey] = seen + 1;
+      const marginTop =
+        levelKey === 4 && seen === 0 ? 0 : margins.marginTop;
       const defaultDom = (
         <Text
           accessibilityRole="header"
           testID={`markdown-heading-${level}`}
           style={[
-            body,
+            { color: theme.colors.text },
             typo,
             {
-              marginTop: margins.marginTop,
+              marginTop,
               marginBottom: margins.marginBottom,
             },
           ]}
@@ -95,12 +107,33 @@ export const buildRnComponents = ({
 
     p: (props) => {
       const { children } = props;
+      const inList = props.inListItem === true;
+      let marginBottom = theme.spacing.paragraphGap;
+      if (inList) {
+        marginBottom = 0;
+      } else {
+        const isLeading = paragraphIndex === 0;
+        paragraphIndex += 1;
+        marginBottom = isLeading
+          ? theme.spacing.leadingParagraphGap
+          : theme.spacing.paragraphGap;
+      }
       const defaultDom = (
         <View
           testID="markdown-paragraph"
-          style={{ marginBottom: theme.spacing.paragraphGap, marginTop: 0 }}
+          style={{ marginBottom, marginTop: 0 }}
         >
-          {children}
+          <Text
+            style={[
+              body,
+              Platform.OS === 'web'
+                ? ({ marginBlockEnd: 0, paddingBlockEnd: 0 } as TextStyle)
+                : null,
+              Platform.OS === 'android' ? { includeFontPadding: false } : null,
+            ]}
+          >
+            {children}
+          </Text>
         </View>
       );
       return applyEleRender(eleRender, 'p', props as MarkdownRendererEleProps, defaultDom);
@@ -114,7 +147,7 @@ export const buildRnComponents = ({
     h6: heading(6),
 
     strong: (props) => (
-      <Text style={{ fontWeight: '700' }}>{props.children}</Text>
+      <Text style={emphasis}>{props.children}</Text>
     ),
     em: (props) => <Text style={{ fontStyle: 'italic' }}>{props.children}</Text>,
     del: (props) => (
@@ -157,9 +190,9 @@ export const buildRnComponents = ({
       <View
         testID="markdown-list-unordered"
         style={{
-          marginTop: theme.spacing.paragraphGap,
-          marginBottom: theme.spacing.paragraphGap * 2,
-          paddingLeft: theme.spacing.listIndent,
+          marginTop: theme.spacing.listBlockMarginTop,
+          marginBottom: theme.spacing.listBlockMarginBottom,
+          paddingLeft: 0,
         }}
       >
         {props.children}
@@ -171,9 +204,9 @@ export const buildRnComponents = ({
         <View
           testID="markdown-list-ordered"
           style={{
-            marginTop: theme.spacing.paragraphGap,
-            marginBottom: theme.spacing.paragraphGap * 2,
-            paddingLeft: theme.spacing.listIndent,
+            marginTop: theme.spacing.listBlockMarginTop,
+            marginBottom: theme.spacing.listBlockMarginBottom,
+            paddingLeft: 0,
           }}
         >
           {items.map((child, index) => {
@@ -197,7 +230,7 @@ export const buildRnComponents = ({
           style={{
             flexDirection: 'row',
             marginBottom: theme.spacing.listItemGap,
-            marginTop: theme.spacing.listItemGap,
+            marginTop: 0,
             paddingLeft: 0,
           }}
         >
@@ -215,11 +248,19 @@ export const buildRnComponents = ({
               }}
             />
           ) : (
-            <Text style={[body, { marginRight: 6, minWidth: 20 }]}>
+            <Text style={[body, { width: 20, marginRight: 0, textAlign: 'center' }]}>
               {listIndex != null ? `${listIndex}.` : '\u2022'}
             </Text>
           )}
-          <View style={{ flex: 1 }}>{children}</View>
+          <View style={{ flex: 1 }}>
+            {React.Children.map(children, (child) =>
+              React.isValidElement(child)
+                ? React.cloneElement(child as React.ReactElement, {
+                    inListItem: true,
+                  })
+                : child,
+            )}
+          </View>
         </View>
       );
       return applyEleRender(
@@ -347,34 +388,64 @@ export const buildRnComponents = ({
       <ScrollView
         horizontal
         testID="markdown-table"
-        style={{ marginVertical: 4 }}
+        style={{ marginVertical: theme.spacing.tableBlockMarginVertical }}
       >
         <View>{props.children}</View>
       </ScrollView>
     ),
     thead: (props) => <View>{props.children}</View>,
     tbody: (props) => <View>{props.children}</View>,
-    tr: (props) => (
-      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: theme.colors.border }}>
-        {props.children}
-      </View>
-    ),
-    th: (props) => (
-      <View
-        style={{
-          padding: theme.spacing.tableCellPadding,
-          minWidth: 80,
-          backgroundColor: theme.colors.tableHeaderBackground,
-        }}
-      >
-        <Text style={[body, { fontWeight: '600' }]}>{props.children}</Text>
-      </View>
-    ),
-    td: (props) => (
-      <View style={{ padding: theme.spacing.tableCellPadding, minWidth:  80 }}>
-        <Text style={body}>{props.children}</Text>
-      </View>
-    ),
+    tr: (props) => {
+      const cells = React.Children.toArray(props.children);
+      return (
+        <View
+          style={{
+            flexDirection: 'row',
+            borderBottomWidth: 1,
+            borderColor: theme.colors.border,
+          }}
+        >
+          {cells.map((cell, index) =>
+            React.isValidElement(cell)
+              ? React.cloneElement(cell as React.ReactElement, {
+                  columnIndex: index,
+                })
+              : cell,
+          )}
+        </View>
+      );
+    },
+    th: (props) => {
+      const columnIndex = (props as { columnIndex?: number }).columnIndex ?? 0;
+      const cellTextStyle =
+        columnIndex === 0
+          ? [theme.typography.tableLabel, { color: theme.colors.textMuted }]
+          : [theme.typography.tableValue, { color: theme.colors.text }];
+      return (
+        <View
+          style={{
+            padding: theme.spacing.tableCellPadding,
+            minWidth: 80,
+            flex: 1,
+            backgroundColor: theme.colors.tableHeaderBackground,
+          }}
+        >
+          <Text style={cellTextStyle}>{props.children}</Text>
+        </View>
+      );
+    },
+    td: (props) => {
+      const columnIndex = (props as { columnIndex?: number }).columnIndex ?? 0;
+      const cellTextStyle =
+        columnIndex === 0
+          ? [theme.typography.tableLabel, { color: theme.colors.textMuted }]
+          : [theme.typography.tableValue, { color: theme.colors.text }];
+      return (
+        <View style={{ padding: theme.spacing.tableCellPadding, minWidth: 80, flex: 1 }}>
+          <Text style={cellTextStyle}>{props.children}</Text>
+        </View>
+      );
+    },
 
     input: (props) => {
       if (props.type === 'checkbox') return null;

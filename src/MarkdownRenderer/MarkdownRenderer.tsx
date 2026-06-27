@@ -4,6 +4,7 @@ import React, {
   useMemo,
 } from 'react';
 import { View } from 'react-native';
+import { webClassName } from '../theme/webClassName';
 import { MarkdownThemeProvider } from '../theme/MarkdownThemeProvider';
 import { compactMarkdownTheme, mergeMarkdownThemeOverrides } from '../theme/mobileTheme';
 import { useCompactLayout } from '../theme/useCompactLayout';
@@ -55,7 +56,7 @@ const MarkdownRendererInner = forwardRef<
   });
 
   return (
-    <View testID={testID} style={style}>
+    <View testID={testID} style={style} {...webClassName('agentui-markdown')}>
       {reactContent}
     </View>
   );

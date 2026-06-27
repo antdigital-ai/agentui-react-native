@@ -26,6 +26,10 @@ export interface MarkdownTheme {
   };
   typography: {
     body: TextStyle;
+    emphasis: TextStyle;
+    caption: TextStyle;
+    tableLabel: TextStyle;
+    tableValue: TextStyle;
     h1: TextStyle;
     h2: TextStyle;
     h3: TextStyle;
@@ -37,11 +41,16 @@ export interface MarkdownTheme {
   };
   spacing: {
     paragraphGap: number;
+    /** First paragraph in a message (Figma intro line → sections). */
+    leadingParagraphGap: number;
     listIndent: number;
     listItemGap: number;
+    listBlockMarginTop: number;
+    listBlockMarginBottom: number;
     blockquotePadding: number;
     codeBlockPadding: number;
     tableCellPadding: number;
+    tableBlockMarginVertical: number;
     headingMarginTop: number;
     headingMarginBottom: number;
   };
@@ -77,6 +86,10 @@ export const defaultTheme: MarkdownTheme = {
   },
   typography: {
     body: { fontSize: 15, lineHeight: 23, ...fontFamilies.body },
+    emphasis: { fontSize: 15, lineHeight: 23, fontWeight: '600', ...fontFamilies.body },
+    caption: { fontSize: 12, lineHeight: 17, fontWeight: '500', ...fontFamilies.body },
+    tableLabel: { fontSize: 15, lineHeight: 23, ...fontFamilies.body },
+    tableValue: { fontSize: 15, lineHeight: 23, fontWeight: '600', ...fontFamilies.body },
     h1: { fontSize: 30, lineHeight: 38, fontWeight: '600', ...fontFamilies.body },
     h2: { fontSize: 24, lineHeight: 32, fontWeight: '600', ...fontFamilies.body },
     h3: { fontSize: 18, lineHeight: 26, fontWeight: '600', ...fontFamilies.body },
@@ -88,11 +101,15 @@ export const defaultTheme: MarkdownTheme = {
   },
   spacing: {
     paragraphGap: agenticSpacing.margin2x,
+    leadingParagraphGap: agenticSpacing.margin2x,
     listIndent: 28,
     listItemGap: agenticSpacing.margin1x,
+    listBlockMarginTop: agenticSpacing.margin2x,
+    listBlockMarginBottom: agenticSpacing.margin2x * 2,
     blockquotePadding: agenticSpacing.margin2x,
     codeBlockPadding: agenticSpacing.margin2x + agenticSpacing.margin1x,
     tableCellPadding: agenticSpacing.margin2x,
+    tableBlockMarginVertical: agenticSpacing.margin1x,
     headingMarginTop: agenticSpacing.margin2x,
     headingMarginBottom: agenticSpacing.margin2x,
   },

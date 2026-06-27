@@ -3,6 +3,7 @@ import { Platform, View } from 'react-native';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import { agenticColors } from '../theme/agenticTokens';
+import { webClassName } from '../theme/webClassName';
 import type { MessageBubbleProps } from './types';
 
 export function MessageBubble({
@@ -10,6 +11,7 @@ export function MessageBubble({
   chatTheme,
   throttleOptions,
   layoutDensity = 'auto',
+  isLast = false,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const figma = agenticColors.figmaHome;
@@ -46,10 +48,17 @@ export function MessageBubble({
 
   const markdownTheme = useMemo((): MarkdownThemeOverride | undefined => {
     if (!isUser) return undefined;
+    const bubbleTextSpacing: MarkdownThemeOverride = {
+      spacing: {
+        leadingParagraphGap: 0,
+        paragraphGap: 0,
+      },
+    };
     const onFigmaPurple =
       chatTheme.userBubbleBackground === figma.userBubbleBackground;
     if (onFigmaPurple) {
       return {
+        ...bubbleTextSpacing,
         colors: {
           codeBackground: figma.userBubbleCodeBackground,
           blockquoteBorder: figma.userBubbleBorderAccent,
@@ -59,6 +68,7 @@ export function MessageBubble({
       };
     }
     return {
+      ...bubbleTextSpacing,
       colors: {
         codeBackground: agenticColors.userBubbleCodeBackground,
         blockquoteBorder: agenticColors.primary,
@@ -71,10 +81,11 @@ export function MessageBubble({
   return (
     <View
       testID={isUser ? 'message-bubble-user' : 'message-bubble-assistant'}
+      {...webClassName('agentui-message-bubble')}
       style={{
         flexDirection: 'row',
         justifyContent: isUser ? 'flex-end' : 'flex-start',
-        marginBottom: chatTheme.bubbleGap,
+        marginBottom: isLast ? 0 : chatTheme.bubbleGap,
         width: isUser ? undefined : '100%',
       }}
     >

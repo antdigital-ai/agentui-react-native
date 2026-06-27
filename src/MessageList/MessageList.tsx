@@ -6,6 +6,7 @@ import type { LayoutDensity } from '../theme/layout';
 import { mergeChatTheme, defaultChatTheme } from './chatTheme';
 import { MessageBubble } from './MessageBubble';
 import type { ChatMessage, MessageListProps } from './types';
+import { webClassName } from '../theme/webClassName';
 
 export function MessageList({
   messages,
@@ -40,12 +41,13 @@ export function MessageList({
     return () => clearTimeout(t);
   }, [autoScrollToBottom, messages.length, lastContent, lastId]);
 
-  const renderItem: ListRenderItem<ChatMessage> = ({ item }) => (
+  const renderItem: ListRenderItem<ChatMessage> = ({ item, index }) => (
     <MessageBubble
       message={item}
       chatTheme={chatTheme}
       throttleOptions={throttleOptions}
       layoutDensity={layoutDensity}
+      isLast={index === messages.length - 1}
     />
   );
 
@@ -56,6 +58,7 @@ export function MessageList({
       data={messages}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
+      {...webClassName('agentui-message-list')}
       style={[
         style,
         Platform.OS === 'web'
@@ -64,7 +67,10 @@ export function MessageList({
       ]}
       contentContainerStyle={[
         {
-          padding: chatTheme.listPadding,
+          paddingTop: chatTheme.listPaddingTop ?? chatTheme.listPadding,
+          paddingBottom: chatTheme.listPaddingBottom ?? chatTheme.listPadding,
+          paddingHorizontal:
+            chatTheme.listPaddingHorizontal ?? chatTheme.listPadding,
           flexGrow: 1,
         },
         contentContainerStyle,
