@@ -45,6 +45,29 @@
   cursor: pointer;
 }
 
+/* Figma Home `988:19049` — primary link + 14px icon */
+.agentui-markdown-link {
+  color: #7c33d7;
+  text-decoration: underline;
+  text-decoration-color: #7c33d7;
+  text-underline-offset: 2px;
+}
+
+.agentui-markdown-link-with-icon {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 2px;
+  text-decoration: none;
+}
+
+.agentui-markdown-link-with-icon span {
+  color: #7c33d7;
+  text-decoration: underline;
+  text-decoration-color: #7c33d7;
+  text-underline-offset: 2px;
+}
+
 .agentui-markdown img {
   max-width: 100%;
   height: auto;

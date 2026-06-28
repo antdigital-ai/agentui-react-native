@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { FlatList, Platform, type ListRenderItem } from 'react-native';
 import { compactChatTheme } from '../theme/mobileTheme';
 import { useCompactLayout } from '../theme/useCompactLayout';
@@ -35,6 +35,39 @@ export function MessageList({
   const lastId = lastMessage?.id ?? '';
   const scrollOnResize = autoScrollToBottom && lastMessage?.streaming === true;
 
+  const onContentSizeChange = useCallback(() => {
+    if (scrollOnResize && messages.length > 0) {
+      listRef.current?.scrollToEnd({ animated: false });
+    }
+  }, [scrollOnResize, messages.length]);
+
+  const renderItem = useCallback<ListRenderItem<ChatMessage>>(
+    ({ item, index }) => (
+      <MessageBubble
+        message={item}
+        chatTheme={chatTheme}
+        throttleOptions={throttleOptions}
+        layoutDensity={layoutDensity}
+        isLast={index === messages.length - 1}
+      />
+    ),
+    [chatTheme, layoutDensity, messages.length, throttleOptions],
+  );
+
+  const listContentContainerStyle = useMemo(
+    () => [
+      {
+        paddingTop: chatTheme.listPaddingTop ?? chatTheme.listPadding,
+        paddingBottom: chatTheme.listPaddingBottom ?? chatTheme.listPadding,
+        paddingHorizontal:
+          chatTheme.listPaddingHorizontal ?? chatTheme.listPadding,
+        flexGrow: 1,
+      },
+      contentContainerStyle,
+    ],
+    [chatTheme, contentContainerStyle],
+  );
+
   useEffect(() => {
     if (!autoScrollToBottom || messages.length === 0) return;
     const t = setTimeout(() => {
@@ -43,22 +76,12 @@ export function MessageList({
     return () => clearTimeout(t);
   }, [autoScrollToBottom, messages.length, lastContent, lastId]);
 
-  const renderItem: ListRenderItem<ChatMessage> = ({ item, index }) => (
-    <MessageBubble
-      message={item}
-      chatTheme={chatTheme}
-      throttleOptions={throttleOptions}
-      layoutDensity={layoutDensity}
-      isLast={index === messages.length - 1}
-    />
-  );
-
   return (
     <FlatList
       ref={listRef}
       testID={testID}
       data={messages}
-      keyExtractor={(item) => item.id}
+      keyExtractor={keyExtractor}
       renderItem={renderItem}
       {...webClassName('agentui-message-list')}
       style={[
@@ -67,22 +90,15 @@ export function MessageList({
           ? { flex: 1, minHeight: 0, width: '100%' }
           : null,
       ]}
-      contentContainerStyle={[
-        {
-          paddingTop: chatTheme.listPaddingTop ?? chatTheme.listPadding,
-          paddingBottom: chatTheme.listPaddingBottom ?? chatTheme.listPadding,
-          paddingHorizontal:
-            chatTheme.listPaddingHorizontal ?? chatTheme.listPadding,
-          flexGrow: 1,
-        },
-        contentContainerStyle,
-      ]}
+      contentContainerStyle={listContentContainerStyle}
       keyboardShouldPersistTaps="handled"
-      onContentSizeChange={() => {
-        if (scrollOnResize && messages.length > 0) {
-          listRef.current?.scrollToEnd({ animated: false });
-        }
-      }}
+      onContentSizeChange={onContentSizeChange}
+      removeClippedSubviews={Platform.OS === 'android'}
+      windowSize={7}
     />
   );
+}
+
+function keyExtractor(item: ChatMessage) {
+  return item.id;
 }

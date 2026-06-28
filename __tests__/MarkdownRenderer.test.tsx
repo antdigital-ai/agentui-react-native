@@ -21,4 +21,27 @@ describe('MarkdownRenderer', () => {
     );
     expect(getByTestId('markdown-code-block')).toBeTruthy();
   });
+
+  it('renders compact Figma home markdown link', () => {
+    const { getByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content="Official website: [https://arbitrum.io/](https://arbitrum.io/)"
+      />,
+    );
+    expect(getByTestId('markdown-link')).toBeTruthy();
+  });
+
+  it('renders font tag color and size in list text', () => {
+    const { getAllByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        content={
+          '- 24h Change: <font color="#FF5B5B">+3.2%</font>\n- 72h Change: <font color="#00A870">-1.28%</font>'
+        }
+      />,
+    );
+    expect(getAllByTestId('markdown-font').length).toBe(2);
+    expect(getByText('+3.2%')).toBeTruthy();
+    expect(getByText('-1.28%')).toBeTruthy();
+  });
 });

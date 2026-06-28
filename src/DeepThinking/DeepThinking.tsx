@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -31,7 +31,7 @@ function resolveLabel(
   return merged.completed;
 }
 
-export function DeepThinking({
+export const DeepThinking = memo(function DeepThinking({
   status,
   label,
   body,
@@ -148,4 +148,4 @@ export function DeepThinking({
       ) : null}
     </View>
   );
-}
+});

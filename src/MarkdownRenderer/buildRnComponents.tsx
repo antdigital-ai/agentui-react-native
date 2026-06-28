@@ -3,6 +3,7 @@ import {
   Image,
   Linking,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   View,
@@ -11,12 +12,20 @@ import {
 } from 'react-native';
 import type { MarkdownTheme } from '../theme/defaultTheme';
 import { headingMarginsDesktop, type HeadingLevel } from '../theme/headingMargins';
+import { webClassName } from '../theme/webClassName';
 import type {
   MarkdownRendererEleProps,
   MarkdownRendererProps,
   RendererBlockProps,
 } from './types';
 import { extractLanguageFromClassName } from './utils/astExtract';
+import { fontTagTextStyle } from './fontStyle';
+import {
+  FIGMA_HOME_LINK_COLOR,
+  FIGMA_HOME_LINK_ICON_GAP,
+  FIGMA_HOME_LINK_ICON_SIZE,
+  markdownLinkIconSource,
+} from './markdownLinkFigma';
 import { shouldRenderUrlAsPlainText } from './utils/urlSafety';
 
 type BuildOptions = {
@@ -150,6 +159,26 @@ export const buildRnComponents = ({
       <Text style={emphasis}>{props.children}</Text>
     ),
     em: (props) => <Text style={{ fontStyle: 'italic' }}>{props.children}</Text>,
+    font: (props) => {
+      const { children, color, size } = props as RendererBlockProps & {
+        color?: string;
+        size?: string;
+      };
+      const defaultDom = (
+        <Text
+          testID="markdown-font"
+          style={fontTagTextStyle(color, size, body)}
+        >
+          {children}
+        </Text>
+      );
+      return applyEleRender(
+        eleRender,
+        'font',
+        props as MarkdownRendererEleProps,
+        defaultDom,
+      );
+    },
     del: (props) => (
       <Text style={{ textDecorationLine: 'line-through' }}>{props.children}</Text>
     ),
@@ -164,21 +193,49 @@ export const buildRnComponents = ({
         if (linkConfig?.onPress?.(href) === false) return;
         if (href) Linking.openURL(href).catch(() => undefined);
       };
-      const defaultDom = (
+      const linkTextStyle: TextStyle = {
+        color: theme.colors.link,
+        ...theme.typography.body,
+        textDecorationLine: 'underline',
+        textDecorationColor: theme.colors.linkUnderline,
+        ...(Platform.OS === 'web'
+          ? ({ cursor: 'pointer', textUnderlineOffset: 2 } as TextStyle)
+          : null),
+      };
+      const useFigmaLinkChrome = theme.colors.link === FIGMA_HOME_LINK_COLOR;
+
+      const defaultDom = useFigmaLinkChrome ? (
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="link"
+          testID="markdown-link"
+          {...webClassName('agentui-markdown-link agentui-markdown-link-with-icon')}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            columnGap: FIGMA_HOME_LINK_ICON_GAP,
+            gap: FIGMA_HOME_LINK_ICON_GAP,
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Image
+            source={markdownLinkIconSource}
+            style={{
+              width: FIGMA_HOME_LINK_ICON_SIZE,
+              height: FIGMA_HOME_LINK_ICON_SIZE,
+            }}
+            resizeMode="contain"
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+          <Text style={linkTextStyle}>{children}</Text>
+        </Pressable>
+      ) : (
         <Text
           testID="markdown-link"
-          style={[
-            {
-              color: theme.colors.link,
-              ...theme.typography.body,
-              textDecorationLine: 'underline',
-              textDecorationColor: theme.colors.linkUnderline,
-            },
-            Platform.OS === 'web'
-              ? ({ cursor: 'pointer', textUnderlineOffset: 4 } as TextStyle)
-              : null,
-          ]}
+          style={linkTextStyle}
           onPress={onPress}
+          {...webClassName('agentui-markdown-link')}
         >
           {children}
         </Text>

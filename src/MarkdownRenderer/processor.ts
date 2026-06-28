@@ -3,9 +3,11 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import type { Plugin, Processor } from 'unified';
 import { unified } from 'unified';
+import { rehypeFontFromRaw } from './rehypeFontFromRaw';
 import type { MarkdownRemarkPlugin } from './types';
 
 const remarkRehypePlugin = remarkRehype as unknown as Plugin;
+const rehypeFontPlugin = rehypeFontFromRaw as unknown as Plugin;
 
 export const createHastProcessor = (
   extraRemarkPlugins?: MarkdownRemarkPlugin[],
@@ -17,7 +19,8 @@ export const createHastProcessor = (
   (processor as Processor)
     .use(remarkParse)
     .use(remarkGfm, { singleTilde: false })
-    .use(remarkRehypePlugin as Plugin, { allowDangerousHtml: false } as never);
+    .use(remarkRehypePlugin as Plugin, { allowDangerousHtml: true } as never)
+    .use(rehypeFontPlugin);
 
   if (extraRemarkPlugins?.length) {
     extraRemarkPlugins.forEach((entry) => {

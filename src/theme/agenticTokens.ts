@@ -26,6 +26,8 @@ export const agenticColors = {
     userBubbleHr: 'rgba(90, 0, 255, 0.25)',
     userBubbleLinkUnderline: 'rgba(90, 0, 255, 0.35)',
     userBubbleBorderAccent: '#7c33d7',
+    /** Figma `988:19047` inline / block links */
+    linkPrimary: '#7c33d7',
     contentWidth: 335,
     horizontalGutter: 20,
     userBubbleMaxWidth: 280,

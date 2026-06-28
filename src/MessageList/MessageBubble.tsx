@@ -1,13 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Platform, View } from 'react-native';
 import { DeepThinking } from '../DeepThinking/DeepThinking';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import { agenticColors } from '../theme/agenticTokens';
 import { webClassName } from '../theme/webClassName';
+import { messageBubblePropsAreEqual } from './messageBubblePropsAreEqual';
 import type { MessageBubbleProps } from './types';
 
-export function MessageBubble({
+function MessageBubbleInner({
   message,
   chatTheme,
   throttleOptions,
@@ -116,3 +117,5 @@ export function MessageBubble({
     </View>
   );
 }
+
+export const MessageBubble = memo(MessageBubbleInner, messageBubblePropsAreEqual);

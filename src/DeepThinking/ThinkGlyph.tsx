@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Image, View } from 'react-native';
 import { chevronDownSource, thinkGlyphSource } from './assets';
 
@@ -7,7 +7,7 @@ type ThinkGlyphProps = {
 };
 
 /** Figma `1182:19755` — AI sparkle in 32px circle (PNG @2x from SVG export). */
-export function ThinkGlyph({ size = 32 }: ThinkGlyphProps) {
+export const ThinkGlyph = memo(function ThinkGlyph({ size = 32 }: ThinkGlyphProps) {
   return (
     <View
       style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
@@ -22,7 +22,7 @@ export function ThinkGlyph({ size = 32 }: ThinkGlyphProps) {
       />
     </View>
   );
-}
+});
 
 type ThinkChevronProps = {
   expanded: boolean;
@@ -30,7 +30,10 @@ type ThinkChevronProps = {
 };
 
 /** Figma `1146:42699` arrow — down when expanded, points right when collapsed. */
-export function ThinkChevron({ expanded, size = 16 }: ThinkChevronProps) {
+export const ThinkChevron = memo(function ThinkChevron({
+  expanded,
+  size = 16,
+}: ThinkChevronProps) {
   return (
     <Image
       source={chevronDownSource}
@@ -44,4 +47,4 @@ export function ThinkChevron({ expanded, size = 16 }: ThinkChevronProps) {
       importantForAccessibility="no"
     />
   );
-}
+});

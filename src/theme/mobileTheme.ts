@@ -33,7 +33,8 @@ export const compactMarkdownTheme: MarkdownThemeOverride = {
   colors: {
     text: figma.text,
     textMuted: figma.textSecondary,
-    link: figma.text,
+    link: figma.linkPrimary,
+    linkUnderline: figma.linkPrimary,
     codeText: figma.text,
   },
   typography: {
