@@ -85,7 +85,10 @@ export const DeepThinking = memo(function DeepThinking({
   const header = (
     <>
       {icon ?? <ThinkGlyph size={theme.iconSize} />}
-      <View style={theme.labelWrap}>
+      <View
+        style={theme.labelWrap}
+        {...webClassName('agentui-deep-thinking-label')}
+      >
         <Text style={labelTextStyle} numberOfLines={2}>
           {title}
         </Text>

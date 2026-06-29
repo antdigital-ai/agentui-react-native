@@ -1,7 +1,4 @@
-/**
- * Figma `1182:19755` (Mask group) — runtime @2x PNG + trimmed SVG for design handoff.
- * Node file: 首页 Home `eYZN8DX1mgVS1c5IrSDmA3`.
- */
+/** Figma `988:18867` — AI sparkle PNG @2x from SVG export. */
 import type { ImageSourcePropType } from 'react-native';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports

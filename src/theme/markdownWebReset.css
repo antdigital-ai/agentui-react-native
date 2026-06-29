@@ -74,6 +74,12 @@
   border: 0;
 }
 
+.agentui-markdown-table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .agentui-message-list,
 .agentui-message-list * {
   box-sizing: border-box;
@@ -120,10 +126,22 @@
   column-gap: 8px;
 }
 
-.agentui-deep-thinking-header span,
-.agentui-deep-thinking-header div {
+.agentui-deep-thinking-glyph {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.agentui-deep-thinking-glyph img {
+  display: block;
+}
+
+.agentui-deep-thinking-label,
+.agentui-deep-thinking-label span {
   margin: 0;
   padding: 0;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;

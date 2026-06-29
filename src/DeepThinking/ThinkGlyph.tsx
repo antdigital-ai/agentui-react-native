@@ -1,21 +1,34 @@
 import React, { memo } from 'react';
 import { Image, View } from 'react-native';
+import { webClassName } from '../theme/webClassName';
+import { defaultDeepThinkingTheme } from './deepThinkingTheme';
 import { chevronDownSource, thinkGlyphSource } from './assets';
 
 type ThinkGlyphProps = {
   size?: number;
 };
 
-/** Figma `1182:19755` — AI sparkle in 32px circle (PNG @2x from SVG export). */
+/** Figma `988:18867` sparkle inside `1182:19755` 32px circle. */
 export const ThinkGlyph = memo(function ThinkGlyph({ size = 32 }: ThinkGlyphProps) {
+  const { icon } = defaultDeepThinkingTheme;
+  const glyphSize = Math.round(size * (14 / 32));
+
   return (
     <View
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+      {...webClassName('agentui-deep-thinking-glyph')}
+      style={[
+        icon,
+        {
+          width: size,
+          height: size,
+          flexShrink: 0,
+        },
+      ]}
       testID="deep-thinking-glyph"
     >
       <Image
         source={thinkGlyphSource}
-        style={{ width: size, height: size }}
+        style={{ width: glyphSize, height: glyphSize }}
         resizeMode="contain"
         accessibilityElementsHidden
         importantForAccessibility="no"

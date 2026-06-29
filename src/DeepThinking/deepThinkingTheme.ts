@@ -54,6 +54,7 @@ export const defaultDeepThinkingTheme: DeepThinkingTheme = {
     flex: 1,
     minHeight: 32,
     justifyContent: 'center',
+    alignSelf: 'center',
   },
   chevron: {
     width: 16,

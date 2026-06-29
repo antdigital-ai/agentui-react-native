@@ -458,22 +458,54 @@ export const buildRnComponents = ({
       );
     },
 
-    table: (props) => (
-      <ScrollView
-        horizontal
-        testID="markdown-table"
-        style={{ marginVertical: theme.spacing.tableBlockMarginVertical }}
-      >
-        <View>{props.children}</View>
-      </ScrollView>
+    table: (props) => {
+      const tableBlockStyle: ViewStyle = {
+        width: '100%',
+        alignSelf: 'stretch',
+        marginVertical: theme.spacing.tableBlockMarginVertical,
+      };
+      const tableInner = (
+        <View style={{ width: '100%', alignSelf: 'stretch' }}>
+          {props.children}
+        </View>
+      );
+      if (Platform.OS === 'web') {
+        return (
+          <View
+            testID="markdown-table"
+            {...webClassName('agentui-markdown-table')}
+            style={tableBlockStyle}
+          >
+            {tableInner}
+          </View>
+        );
+      }
+      return (
+        <View testID="markdown-table" style={tableBlockStyle}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator
+            style={{ width: '100%' }}
+            contentContainerStyle={{ minWidth: '100%' }}
+          >
+            {tableInner}
+          </ScrollView>
+        </View>
+      );
+    },
+    thead: (props) => (
+      <View style={{ width: '100%', alignSelf: 'stretch' }}>{props.children}</View>
     ),
-    thead: (props) => <View>{props.children}</View>,
-    tbody: (props) => <View>{props.children}</View>,
+    tbody: (props) => (
+      <View style={{ width: '100%', alignSelf: 'stretch' }}>{props.children}</View>
+    ),
     tr: (props) => {
       const cells = React.Children.toArray(props.children);
       return (
         <View
           style={{
+            width: '100%',
+            alignSelf: 'stretch',
             flexDirection: 'row',
             borderBottomWidth: 1,
             borderColor: theme.colors.border,
