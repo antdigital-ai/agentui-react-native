@@ -6,12 +6,12 @@
   "main": "index.js",
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('.expo',{recursive:true,force:true}); try{require('fs').rmSync('node_modules/.cache',{recursive:true,force:true})}catch(e){}\"",
-    "start": "expo start --offline",
-    "start:clean": "npm run clean && expo start --offline --clear",
-    "start:online": "expo start",
-    "android": "expo start --offline --android",
-    "ios": "expo start --offline --ios",
-    "web": "expo start --offline --web"
+    "start": "cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start --offline",
+    "start:clean": "npm run clean && cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start --offline --clear",
+    "start:online": "cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start",
+    "android": "cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start --offline --android",
+    "ios": "cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start --offline --ios",
+    "web": "cross-env NODE_OPTIONS=--disable-warning=NO_COLOR expo start --offline --web"
   },
   "dependencies": {
     "@antdigital/agentui-react-native": "file:..",
@@ -27,6 +27,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "babel-preset-expo": "~56.0.0",
+    "cross-env": "^7.0.3",
     "typescript": "~6.0.3"
   },
   "overrides": {
