@@ -75,6 +75,7 @@ export const DeepThinking = memo(function DeepThinking({
     showExpandChevron && expandable && hasBody;
 
   const labelTextStyle: StyleProp<TextStyle> = [
+    theme.labelWrap,
     theme.label,
     Platform.OS === 'android' ? { includeFontPadding: false } : null,
     Platform.OS === 'web'
@@ -82,24 +83,21 @@ export const DeepThinking = memo(function DeepThinking({
       : null,
   ];
 
-  const header = (
+  const headerRow = (
     <>
       {icon ?? <ThinkGlyph size={theme.iconSize} />}
-      <View
-        style={theme.labelWrap}
+      <Text
+        style={labelTextStyle}
+        numberOfLines={2}
         {...webClassName('agentui-deep-thinking-label')}
       >
-        <Text style={labelTextStyle} numberOfLines={2}>
-          {title}
-        </Text>
-      </View>
+        {title}
+      </Text>
       {status === 'thinking' ? (
         <ActivityIndicator size="small" color={theme.label.color as string} />
       ) : null}
       {showChevron ? (
-        <View style={theme.chevron} accessibilityElementsHidden>
-          <ThinkChevron expanded={expanded} />
-        </View>
+        <ThinkChevron expanded={expanded} style={theme.chevron} />
       ) : null}
     </>
   );
@@ -128,11 +126,11 @@ export const DeepThinking = memo(function DeepThinking({
           accessibilityLabel={accessibilityLabel ?? title}
           style={({ pressed }) => [rowStyle, pressed ? { opacity: 0.85 } : null]}
         >
-          {header}
+          {headerRow}
         </Pressable>
       ) : (
         <View {...webClassName('agentui-deep-thinking-header')} style={rowStyle}>
-          {header}
+          {headerRow}
         </View>
       )}
       {expanded && hasBody ? (

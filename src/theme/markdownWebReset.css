@@ -128,15 +128,11 @@
 
 .agentui-deep-thinking-glyph {
   flex-shrink: 0;
+  display: block;
   line-height: 0;
 }
 
-.agentui-deep-thinking-glyph img {
-  display: block;
-}
-
-.agentui-deep-thinking-label,
-.agentui-deep-thinking-label span {
+.agentui-deep-thinking-label {
   margin: 0;
   padding: 0;
   display: flex;
