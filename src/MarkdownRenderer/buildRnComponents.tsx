@@ -259,9 +259,10 @@ export const buildRnComponents = ({
         >
           {items.map((child, index) => {
             if (!React.isValidElement(child)) return child;
-            return React.cloneElement(child as React.ReactElement, {
-              isLastListItem: index === lastIndex,
-            });
+            return React.cloneElement(
+              child as React.ReactElement<{ isLastListItem?: boolean }>,
+              { isLastListItem: index === lastIndex },
+            );
           })}
         </View>
       );
@@ -282,10 +283,16 @@ export const buildRnComponents = ({
         >
           {items.map((child, index) => {
             if (!React.isValidElement(child)) return child;
-            return React.cloneElement(child as React.ReactElement, {
-              listIndex: index + 1,
-              isLastListItem: index === lastIndex,
-            });
+            return React.cloneElement(
+              child as React.ReactElement<{
+                listIndex?: number;
+                isLastListItem?: boolean;
+              }>,
+              {
+                listIndex: index + 1,
+                isLastListItem: index === lastIndex,
+              },
+            );
           })}
         </View>
       );
@@ -329,9 +336,10 @@ export const buildRnComponents = ({
           <View style={{ flex: 1 }}>
             {React.Children.map(children, (child) =>
               React.isValidElement(child)
-                ? React.cloneElement(child as React.ReactElement, {
-                    inListItem: true,
-                  })
+                ? React.cloneElement(
+                    child as React.ReactElement<{ inListItem?: boolean }>,
+                    { inListItem: true },
+                  )
                 : child,
             )}
           </View>
@@ -513,9 +521,10 @@ export const buildRnComponents = ({
         >
           {cells.map((cell, index) =>
             React.isValidElement(cell)
-              ? React.cloneElement(cell as React.ReactElement, {
-                  columnIndex: index,
-                })
+              ? React.cloneElement(
+                  cell as React.ReactElement<{ columnIndex?: number }>,
+                  { columnIndex: index },
+                )
               : cell,
           )}
         </View>

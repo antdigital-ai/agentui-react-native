@@ -2,9 +2,12 @@
   "name": "agentui-react-native-example",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "main": "index.js",
   "scripts": {
+    "clean": "node -e \"require('fs').rmSync('.expo',{recursive:true,force:true}); try{require('fs').rmSync('node_modules/.cache',{recursive:true,force:true})}catch(e){}\"",
     "start": "expo start --offline",
+    "start:clean": "npm run clean && expo start --offline --clear",
     "start:online": "expo start",
     "android": "expo start --offline --android",
     "ios": "expo start --offline --ios",
@@ -12,18 +15,24 @@
   },
   "dependencies": {
     "@antdigital/agentui-react-native": "file:..",
-    "@expo/metro-runtime": "~4.0.1",
-    "expo": "~52.0.28",
-    "expo-asset": "~11.0.5",
-    "expo-status-bar": "~2.0.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-web": "~0.19.13"
+    "@expo/metro-runtime": "~56.0.15",
+    "expo": "^56.0.0",
+    "expo-asset": "~56.0.17",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "babel-preset-expo": "~12.0.0",
-    "typescript": "^5.7.3"
+    "babel-preset-expo": "~56.0.0",
+    "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "metro": "0.84.4",
+    "metro-config": "0.84.4",
+    "metro-resolver": "0.84.4",
+    "metro-runtime": "0.84.4"
   }
 }

@@ -4,13 +4,40 @@ Runs the library against live `../src` (monorepo Metro config).
 
 ## Setup
 
-From repository root:
+**Use npm only** (not pnpm). One command from repo root:
+
+```bash
+npm run example:setup
+```
+
+Or manually:
 
 ```bash
 npm install
 cd example
 npm install
 ```
+
+pnpm breaks Metro monorepo resolution (`mdast-util-to-hast`, duplicate Metro versions, config plugins). If you see `node_modules/.pnpm` in paths, delete `node_modules` and `pnpm-lock.yaml`, then reinstall with npm.
+
+If Web shows **500** on `index.bundle` or MIME type `application/json` errors, stop Metro (Ctrl+C), clear cache, and restart:
+
+```bash
+cd example
+npx expo start --clear
+```
+
+Then press `w` for Web. A stale Metro process on port 8081 can keep serving the old broken bundle.
+
+**Cache error** (`Unable to deserialize cloned data`): stale Metro disk cache after switching Node/pnpm/npm. Fix:
+
+```bash
+cd example
+npm run clean
+npm run start:clean
+```
+
+Do **not** use pnpm in this repo — use npm only. If you ran `pnpm install`, remove `node_modules` and `pnpm-lock.yaml`, then `npm install` again.
 
 ## Run
 
