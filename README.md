@@ -24,7 +24,7 @@ npm install @antdigital/agentui-react-native
 
 Peer dependencies: `react`, `react-native`.
 
-Markdown pipeline packages (`unified`, `remark-parse`, `remark-gfm`, `remark-rehype`, `hast-util-to-jsx-runtime`) are **dependencies** of this package; you normally do not add them separately.
+Markdown pipeline packages (`unified`, `remark-*`, `hast-util-to-jsx-runtime`, …) are **bundled into `lib/`** at publish time so Metro does not need `package.exports` or extra resolver config. Host apps only install this package plus `react` / `react-native`.
 
 ## Quick start
 

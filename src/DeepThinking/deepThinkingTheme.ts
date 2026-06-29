@@ -1,4 +1,4 @@
-import type { TextStyle, ViewStyle } from 'react-native';
+import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { agenticColors } from '../theme/agenticTokens';
 import { figmaHomeSpacing } from '../theme/figmaHomeSpacing';
 import { figmaHomeFontFamily } from '../theme/fonts';
@@ -13,7 +13,7 @@ export interface DeepThinkingTheme {
   iconInner: ViewStyle;
   label: TextStyle;
   labelWrap: ViewStyle;
-  chevron: ViewStyle;
+  chevron: ImageStyle;
   bodyContainer: ViewStyle;
 }
 

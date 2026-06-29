@@ -1,8 +1,11 @@
-import remarkGfm from 'remark-gfm';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
-import type { Plugin, Processor } from 'unified';
-import { unified } from 'unified';
+import {
+  remarkGfm,
+  remarkParse,
+  remarkRehype,
+  unified,
+  type Plugin,
+  type Processor,
+} from './remarkBundle';
 import { rehypeFontFromRaw } from './rehypeFontFromRaw';
 import type { MarkdownRemarkPlugin } from './types';
 

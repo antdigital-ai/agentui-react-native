@@ -1,8 +1,7 @@
-import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
+import { toJsxRuntime, type Processor } from './remarkBundle';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
-import type { Processor } from 'unified';
 import type { MarkdownTheme } from '../theme/defaultTheme';
 import type { RendererBlockProps } from './types';
 

@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import type { Plugin } from 'unified';
+import type { Plugin } from './remarkBundle';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import type { LayoutDensity } from '../theme/layout';
 import type { AgentCardData } from './agentCard';

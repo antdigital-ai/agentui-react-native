@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef } from 'react';
-import type { Processor } from 'unified';
+import type { Processor } from '../remarkBundle';
 import { renderMarkdownBlock } from '../renderMarkdownBlock';
 import type { MarkdownTheme } from '../../theme/defaultTheme';
 import type { RendererBlockProps } from '../types';
