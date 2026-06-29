@@ -3,6 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import type { Plugin } from 'unified';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import type { LayoutDensity } from '../theme/layout';
+import type { AgentCardData } from './agentCard';
 
 export interface ContentThrottleOptions {
   charsPerFrame?: number;
@@ -30,6 +31,10 @@ export interface RendererBlockProps {
   [key: string]: unknown;
 }
 
+export type AgentCardRendererProps = RendererBlockProps & {
+  data: AgentCardData;
+};
+
 export interface MarkdownRendererProps {
   content: string;
   streaming?: boolean;
@@ -45,7 +50,10 @@ export interface MarkdownRendererProps {
     props: MarkdownRendererEleProps,
     defaultDom: React.ReactNode,
   ) => React.ReactNode;
-  components?: Record<string, React.ComponentType<RendererBlockProps>>;
+  components?: Record<string, React.ComponentType<RendererBlockProps>> & {
+    /** Custom renderer for ```agent-card JSON fences. */
+    agentCard?: React.ComponentType<AgentCardRendererProps>;
+  };
   theme?: MarkdownThemeOverride;
   /** `auto`: phone native + web viewport under 768px use compact markdown. */
   layoutDensity?: LayoutDensity;
@@ -58,7 +66,10 @@ export interface MarkdownRendererRef {
 
 export interface UseMarkdownToReactOptions {
   remarkPlugins?: MarkdownRemarkPlugin[];
-  components?: Record<string, React.ComponentType<RendererBlockProps>>;
+  components?: Record<string, React.ComponentType<RendererBlockProps>> & {
+    /** Custom renderer for ```agent-card JSON fences. */
+    agentCard?: React.ComponentType<AgentCardRendererProps>;
+  };
   linkConfig?: MarkdownRendererProps['linkConfig'];
   streaming?: boolean;
   contentRevisionSource?: string;

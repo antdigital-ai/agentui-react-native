@@ -32,6 +32,23 @@ describe('MarkdownRenderer', () => {
     expect(getByTestId('markdown-link')).toBeTruthy();
   });
 
+  it('renders agent-card JSON fence', () => {
+    const json = JSON.stringify({
+      title: 'BTC-PERP',
+      highlight: '72,732.45 · -2.63%',
+      fields: [{ label: 'Subtext', value: 'Subtext line' }],
+    });
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={`\`\`\`agent-card\n${json}\n\`\`\``}
+      />,
+    );
+    expect(getByTestId('markdown-agent-card')).toBeTruthy();
+    expect(getByText('BTC-PERP')).toBeTruthy();
+    expect(getByText(/72,732.45/)).toBeTruthy();
+  });
+
   it('renders font tag color and size in list text', () => {
     const { getAllByTestId, getByText } = wrap(
       <MarkdownRenderer

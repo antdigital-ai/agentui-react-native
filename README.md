@@ -70,6 +70,14 @@ import { MarkdownRenderer, MarkdownThemeProvider } from '@antdigital/agentui-rea
 
 **Supported (GFM subset):** headings, paragraphs, bold/italic/strike, links, lists, task lists, blockquote, inline/fenced code, tables, horizontal rule, images (URL).
 
+**Agent cards:** fenced block with language `agent-card` and a JSON body — rendered as a structured card (or override via `components.agentCard`):
+
+````markdown
+```agent-card
+{"title":"BTC-PERP","highlight":"72,732.45 · -2.63%","fields":[{"label":"24h","value":"+3.2%"}]}
+```
+````
+
 ### Streaming (SSE / token stream)
 
 ```tsx

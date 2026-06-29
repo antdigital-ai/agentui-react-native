@@ -27,6 +27,8 @@ import {
   markdownLinkIconSource,
 } from './markdownLinkFigma';
 import { shouldRenderUrlAsPlainText } from './utils/urlSafety';
+import { fencedPreCodeMeta, parseAgentCardJson } from './agentCard';
+import { AgentCardView } from './AgentCardView';
 
 type BuildOptions = {
   theme: MarkdownTheme;
@@ -411,6 +413,24 @@ export const buildRnComponents = ({
 
     pre: (props) => {
       const CodeBlock = userComponents.__codeBlock || userComponents.pre;
+      const { lang, text } = fencedPreCodeMeta(props.children);
+      if (lang === 'agent-card' && text.trim()) {
+        const data = parseAgentCardJson(text);
+        if (data) {
+          const AgentCardOverride = userComponents.agentCard;
+          const cardDom = AgentCardOverride ? (
+            <AgentCardOverride data={data} {...props} />
+          ) : (
+            <AgentCardView data={data} theme={theme} />
+          );
+          return applyEleRender(
+            eleRender,
+            'pre',
+            props as MarkdownRendererEleProps,
+            cardDom,
+          );
+        }
+      }
       if (CodeBlock) {
         return <CodeBlock {...props} />;
       }

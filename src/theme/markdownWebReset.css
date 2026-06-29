@@ -80,6 +80,12 @@
   overflow-x: auto;
 }
 
+.agentui-markdown-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .agentui-message-list,
 .agentui-message-list * {
   box-sizing: border-box;

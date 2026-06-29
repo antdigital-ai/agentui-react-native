@@ -7,6 +7,15 @@ export { markdownToReactSync } from './MarkdownRenderer/markdownToReactSync';
 export { useContentThrottle } from './MarkdownRenderer/useContentThrottle';
 export { createHastProcessor } from './MarkdownRenderer/processor';
 export { splitMarkdownBlocks } from './MarkdownRenderer/streaming/splitMarkdownBlocks';
+export {
+  parseAgentCardJson,
+  normalizeAgentCardData,
+} from './MarkdownRenderer/agentCard';
+export type {
+  AgentCardData,
+  AgentCardField,
+} from './MarkdownRenderer/agentCard';
+export { AgentCardView } from './MarkdownRenderer/AgentCardView';
 export { shouldReparseLastBlock } from './MarkdownRenderer/streaming/lastBlockThrottle';
 export {
   MarkdownThemeProvider,
@@ -20,6 +29,7 @@ export type {
   UseMarkdownToReactOptions,
   MarkdownRemarkPlugin,
   RendererBlockProps,
+  AgentCardRendererProps,
 } from './MarkdownRenderer/types';
 export { MOBILE_LAYOUT_BREAKPOINT, type LayoutDensity } from './theme/layout';
 export { compactChatTheme, compactMarkdownTheme } from './theme/mobileTheme';
