@@ -76,6 +76,7 @@ export const DeepThinking = memo(function DeepThinking({
 
   const labelTextStyle: StyleProp<TextStyle> = [
     theme.labelWrap,
+    status === 'completed' ? { minHeight: undefined } : null,
     theme.label,
     Platform.OS === 'android' ? { includeFontPadding: false } : null,
     Platform.OS === 'web'
@@ -105,10 +106,15 @@ export const DeepThinking = memo(function DeepThinking({
   const rowStyle: StyleProp<ViewStyle> = {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: theme.iconSize,
+    ...(status === 'thinking' ? { minHeight: theme.iconSize } : null),
     columnGap: theme.rowGap,
     gap: theme.rowGap,
   };
+
+  const headerWebClass =
+    status === 'completed'
+      ? 'agentui-deep-thinking-header agentui-deep-thinking-header--completed'
+      : 'agentui-deep-thinking-header';
 
   return (
     <View
@@ -119,7 +125,7 @@ export const DeepThinking = memo(function DeepThinking({
       {expandable ? (
         <Pressable
           testID={`${testID}-header`}
-          {...webClassName('agentui-deep-thinking-header')}
+          {...webClassName(headerWebClass)}
           onPress={toggle}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
@@ -129,7 +135,7 @@ export const DeepThinking = memo(function DeepThinking({
           {headerRow}
         </Pressable>
       ) : (
-        <View {...webClassName('agentui-deep-thinking-header')} style={rowStyle}>
+        <View {...webClassName(headerWebClass)} style={rowStyle}>
           {headerRow}
         </View>
       )}

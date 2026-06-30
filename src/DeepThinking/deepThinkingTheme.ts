@@ -52,7 +52,6 @@ export const defaultDeepThinkingTheme: DeepThinkingTheme = {
   },
   labelWrap: {
     flex: 1,
-    minHeight: 32,
     justifyContent: 'center',
     alignSelf: 'center',
   },

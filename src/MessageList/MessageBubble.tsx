@@ -103,6 +103,7 @@ function MessageBubbleInner({
             layoutDensity={layoutDensity}
             showExpandChevron={message.thinking.showExpandChevron}
             testID="message-deep-thinking"
+            theme={{ rowGap: 2 }}
           />
         ) : null}
         <MarkdownRenderer

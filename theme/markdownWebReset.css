@@ -1,6 +1,7 @@
 /**
  * Strip user-agent defaults inside markdown (React Native Web renders div/span/a).
- * Import before app theme CSS. Example: example/global.css
+ * Import: @import '@antdigital/agentui-react-native/theme/markdownWebReset.css';
+ * (Physical path for Metro CSS — package exports subpaths are not used by @import.)
  */
 .agentui-markdown,
 .agentui-markdown * {
@@ -123,13 +124,22 @@
   box-sizing: border-box;
 }
 
-/* Header row — Figma 32px; do not inherit body line-height 1.8 on web */
+/* Header row — Figma 32px while thinking; completed row uses content height */
 .agentui-deep-thinking-header {
   display: flex;
   flex-direction: row;
   align-items: center;
   min-height: 32px;
   column-gap: 8px;
+}
+
+.agentui-deep-thinking-header--completed {
+  min-height: 0;
+}
+
+.agentui-message-bubble .agentui-deep-thinking-header {
+  column-gap: 2px;
+  gap: 2px;
 }
 
 .agentui-deep-thinking-glyph {
@@ -143,7 +153,6 @@
   padding: 0;
   display: flex;
   align-items: center;
-  min-height: 32px;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
@@ -151,6 +160,10 @@
   color: #1e1f1f;
   background: transparent;
   text-decoration: none;
+}
+
+.agentui-deep-thinking-header--completed .agentui-deep-thinking-label {
+  min-height: 0;
 }
 
 .agentui-deep-thinking-body,

@@ -49,6 +49,15 @@ describe('MarkdownRenderer', () => {
     expect(getByText(/72,732.45/)).toBeTruthy();
   });
 
+  it('renders unordered list item text', () => {
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,
+    );
+    expect(getByTestId('markdown-list-unordered')).toBeTruthy();
+    expect(getByText('Bull point one')).toBeTruthy();
+    expect(getByText('Bull point two')).toBeTruthy();
+  });
+
   it('renders font tag color and size in list text', () => {
     const { getAllByTestId, getByText } = wrap(
       <MarkdownRenderer

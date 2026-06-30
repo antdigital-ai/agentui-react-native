@@ -29,11 +29,12 @@
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
-    "./theme/markdownWebReset.css": "./src/theme/markdownWebReset.css"
+    "./theme/markdownWebReset.css": "./theme/markdownWebReset.css"
   },
   "files": [
     "lib",
-    "src"
+    "src",
+    "theme"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",

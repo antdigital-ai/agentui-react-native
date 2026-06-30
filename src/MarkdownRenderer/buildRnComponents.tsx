@@ -336,14 +336,16 @@ export const buildRnComponents = ({
             </Text>
           )}
           <View style={{ flex: 1 }}>
-            {React.Children.map(children, (child) =>
-              React.isValidElement(child)
-                ? React.cloneElement(
-                    child as React.ReactElement<{ inListItem?: boolean }>,
-                    { inListItem: true },
-                  )
-                : child,
-            )}
+            {React.Children.map(children, (child) => {
+              if (child == null || typeof child === 'boolean') return null;
+              if (React.isValidElement(child)) {
+                return React.cloneElement(
+                  child as React.ReactElement<{ inListItem?: boolean }>,
+                  { inListItem: true },
+                );
+              }
+              return <Text style={body}>{String(child)}</Text>;
+            })}
           </View>
         </View>
       );

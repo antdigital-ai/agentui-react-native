@@ -45,6 +45,10 @@ Do **not** use pnpm in this repo — use npm only. If you ran `pnpm install`, re
 npm start
 ```
 
+**Expo Web:** `global.css` imports `@antdigital/agentui-react-native/theme/markdownWebReset.css`. The file lives at package root `theme/` (Metro CSS does not resolve `package.json` export subpaths). After upgrading the library, restart Metro with `--clear` if styles fail to load.
+
+**Invalid hook call / duplicate React:** The example aliases library `src/` from the repo root. `metro.config.js` forces `react`, `react-dom`, and `react-native` to resolve from `example/node_modules` only. If hooks still break, run `npm run start:clean` and avoid `pnpm` in this repo.
+
 From root: `npm run example` (same as `npm run start --prefix example`).
 
 - **Android:** press `a`
