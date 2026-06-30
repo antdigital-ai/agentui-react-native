@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   type TextStyle,
@@ -58,16 +59,75 @@ const emphasisStyle = (theme: MarkdownTheme): TextStyle => ({
   ...theme.typography.emphasis,
 });
 
+const tableRowBorderStyle = (theme: MarkdownTheme): ViewStyle => ({
+  borderBottomWidth: StyleSheet.hairlineWidth,
+  borderBottomColor: theme.colors.border,
+});
+
+const tableCellPaddingStyle = (theme: MarkdownTheme): ViewStyle => ({
+  paddingTop: theme.spacing.tableCellPadding,
+  paddingBottom: theme.spacing.tableCellPadding,
+  paddingLeft: 0,
+  paddingRight: 0,
+});
+
+const tableCellTextStyle = (
+  theme: MarkdownTheme,
+  columnIndex: number,
+  isHeaderCell: boolean,
+): TextStyle => {
+  if (isHeaderCell) {
+    return theme.typography.tableLabel;
+  }
+  return columnIndex === 0
+    ? theme.typography.tableLabel
+    : theme.typography.tableValue;
+};
+
+const tableCellWebClass = (
+  isHeaderCell: boolean,
+  columnIndex: number,
+): string => {
+  if (isHeaderCell) {
+    return 'agentui-markdown-table-cell agentui-markdown-table-th agentui-markdown-table-label-col';
+  }
+  const role = columnIndex === 0 ? 'label-col' : 'value-col';
+  return `agentui-markdown-table-cell agentui-markdown-table-td agentui-markdown-table-${role}`;
+};
+
+const tableCellTextWebClass = (
+  isHeaderCell: boolean,
+  columnIndex: number,
+): string =>
+  isHeaderCell || columnIndex === 0
+    ? 'agentui-markdown-table-text agentui-markdown-table-text-label'
+    : 'agentui-markdown-table-text agentui-markdown-table-text-value';
+
+export type MarkdownRnComponentsBundle = {
+  components: Record<string, React.ComponentType<RendererBlockProps>>;
+  /** Call before parsing each split markdown block (streaming pieces). */
+  beginMarkdownBlock: (isFirstBlockInDocument?: boolean) => void;
+};
+
 export const buildRnComponents = ({
   theme,
   linkConfig,
   eleRender,
   userComponents,
-}: BuildOptions): Record<string, React.ComponentType<RendererBlockProps>> => {
+}: BuildOptions): MarkdownRnComponentsBundle => {
   const body = textColor(theme);
   const emphasis = emphasisStyle(theme);
   const sectionHeadingIndex: Partial<Record<HeadingLevel, number>> = {};
   let paragraphIndex = 0;
+  let isFirstBlockInDocument = true;
+
+  const beginMarkdownBlock = (firstBlock = true) => {
+    paragraphIndex = 0;
+    isFirstBlockInDocument = firstBlock;
+    for (const key of Object.keys(sectionHeadingIndex)) {
+      delete sectionHeadingIndex[key as HeadingLevel];
+    }
+  };
 
   const heading =
     (level: 1 | 2 | 3 | 4 | 5 | 6): React.FC<RendererBlockProps> =>
@@ -125,9 +185,10 @@ export const buildRnComponents = ({
       } else {
         const isLeading = paragraphIndex === 0;
         paragraphIndex += 1;
-        marginBottom = isLeading
-          ? theme.spacing.leadingParagraphGap
-          : theme.spacing.paragraphGap;
+        marginBottom =
+          isLeading && isFirstBlockInDocument
+            ? theme.spacing.leadingParagraphGap
+            : theme.spacing.paragraphGap;
       }
       const defaultDom = (
         <View
@@ -533,12 +594,12 @@ export const buildRnComponents = ({
       const cells = React.Children.toArray(props.children);
       return (
         <View
+          {...webClassName('agentui-markdown-table-row')}
           style={{
             width: '100%',
             alignSelf: 'stretch',
             flexDirection: 'row',
-            borderBottomWidth: 1,
-            borderColor: theme.colors.border,
+            ...tableRowBorderStyle(theme),
           }}
         >
           {cells.map((cell, index) =>
@@ -554,32 +615,44 @@ export const buildRnComponents = ({
     },
     th: (props) => {
       const columnIndex = (props as { columnIndex?: number }).columnIndex ?? 0;
-      const cellTextStyle =
-        columnIndex === 0
-          ? [theme.typography.tableLabel, { color: theme.colors.textMuted }]
-          : [theme.typography.tableValue, { color: theme.colors.text }];
+      const cellTextStyle = tableCellTextStyle(theme, columnIndex, true);
       return (
         <View
+          {...webClassName(tableCellWebClass(true, columnIndex))}
           style={{
-            padding: theme.spacing.tableCellPadding,
-            minWidth: 80,
+            ...tableCellPaddingStyle(theme),
+            minWidth: 0,
             flex: 1,
-            backgroundColor: theme.colors.tableHeaderBackground,
+            backgroundColor: 'transparent',
           }}
         >
-          <Text style={cellTextStyle}>{props.children}</Text>
+          <Text
+            {...webClassName(tableCellTextWebClass(true, columnIndex))}
+            style={cellTextStyle}
+          >
+            {props.children}
+          </Text>
         </View>
       );
     },
     td: (props) => {
       const columnIndex = (props as { columnIndex?: number }).columnIndex ?? 0;
-      const cellTextStyle =
-        columnIndex === 0
-          ? [theme.typography.tableLabel, { color: theme.colors.textMuted }]
-          : [theme.typography.tableValue, { color: theme.colors.text }];
+      const cellTextStyle = tableCellTextStyle(theme, columnIndex, false);
       return (
-        <View style={{ padding: theme.spacing.tableCellPadding, minWidth: 80, flex: 1 }}>
-          <Text style={cellTextStyle}>{props.children}</Text>
+        <View
+          {...webClassName(tableCellWebClass(false, columnIndex))}
+          style={{
+            ...tableCellPaddingStyle(theme),
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          <Text
+            {...webClassName(tableCellTextWebClass(false, columnIndex))}
+            style={cellTextStyle}
+          >
+            {props.children}
+          </Text>
         </View>
       );
     },
@@ -592,5 +665,5 @@ export const buildRnComponents = ({
     ...userComponents,
   };
 
-  return components;
+  return { components, beginMarkdownBlock };
 };

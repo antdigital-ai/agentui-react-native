@@ -33,7 +33,7 @@ export const headingMarginsMobile: HeadingMarginMap = {
   2: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
   3: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
   4: { marginTop: figmaHomeSpacing.sectionGap, marginBottom: figmaHomeSpacing.inSectionTitleGap },
-  5: { marginTop: 4, marginBottom: 8 },
+  5: { marginTop: 4, marginBottom: 0 },
   6: { marginTop: figmaHomeSpacing.footerBlockGap, marginBottom: 0 },
 };
 

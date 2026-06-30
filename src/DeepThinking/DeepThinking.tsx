@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Platform,
   Pressable,
   Text,
@@ -94,9 +93,6 @@ export const DeepThinking = memo(function DeepThinking({
       >
         {title}
       </Text>
-      {status === 'thinking' ? (
-        <ActivityIndicator size="small" color={theme.label.color as string} />
-      ) : null}
       {showChevron ? (
         <ThinkChevron expanded={expanded} style={theme.chevron} />
       ) : null}

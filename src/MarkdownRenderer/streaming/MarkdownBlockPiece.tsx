@@ -1,15 +1,17 @@
 import React, { memo, useMemo, useRef } from 'react';
 import type { Processor } from '../remarkBundle';
+import type { MarkdownRnComponentsBundle } from '../buildRnComponents';
 import { renderMarkdownBlock } from '../renderMarkdownBlock';
 import type { MarkdownTheme } from '../../theme/defaultTheme';
-import type { RendererBlockProps } from '../types';
 import { shouldReparseLastBlock } from './lastBlockThrottle';
+import { getStreamingStableMarkdownBlock } from './stableTailMarkdown';
 
 export interface MarkdownBlockPieceProps {
   variant: 'sealed' | 'tail';
   blockSource: string;
   processor: Processor;
-  components: Record<string, React.ComponentType<RendererBlockProps>>;
+  componentBundle: MarkdownRnComponentsBundle;
+  isFirstBlock: boolean;
   streaming: boolean;
   theme: MarkdownTheme;
 }
@@ -18,7 +20,8 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
   variant,
   blockSource,
   processor,
-  components,
+  componentBundle,
+  isFirstBlock,
   streaming,
   theme,
 }: MarkdownBlockPieceProps) {
@@ -28,8 +31,10 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
   } | null>(null);
   const cacheRef = useRef<Map<string, React.ReactNode>>(new Map());
   const processorRef = useRef<Processor | null>(null);
-  const componentsRef = useRef(components);
-  componentsRef.current = components;
+  const bundleRef = useRef(componentBundle);
+  bundleRef.current = componentBundle;
+  const isFirstBlockRef = useRef(isFirstBlock);
+  isFirstBlockRef.current = isFirstBlock;
   const themeRef = useRef(theme);
   themeRef.current = theme;
 
@@ -40,8 +45,9 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
       lastParsedRef.current = null;
     }
 
-    const comps = componentsRef.current;
+    const bundle = bundleRef.current;
     const t = themeRef.current;
+    const firstBlock = isFirstBlockRef.current;
 
     if (variant === 'sealed') {
       const cached = cacheRef.current.get(blockSource);
@@ -51,26 +57,42 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
         cacheRef.current.set(blockSource, el);
         return el;
       }
-      const el = renderMarkdownBlock(blockSource, processor, comps, t);
+      const el = renderMarkdownBlock(blockSource, processor, bundle, t, {
+        isFirstBlock: firstBlock,
+      });
       cacheRef.current.set(blockSource, el);
       return el;
     }
 
     if (!streaming) {
-      const el = renderMarkdownBlock(blockSource, processor, comps, t);
+      const el = renderMarkdownBlock(blockSource, processor, bundle, t, {
+        isFirstBlock: firstBlock,
+      });
       lastParsedRef.current = { source: blockSource, node: el };
       return el;
     }
 
+    const stableSource = getStreamingStableMarkdownBlock(blockSource);
     const prev = lastParsedRef.current;
-    if (prev && !shouldReparseLastBlock(prev.source, blockSource, true)) {
+
+    if (
+      prev &&
+      stableSource === prev.source &&
+      blockSource !== stableSource
+    ) {
       return prev.node;
     }
 
-    const el = renderMarkdownBlock(blockSource, processor, comps, t);
-    lastParsedRef.current = { source: blockSource, node: el };
+    if (prev && !shouldReparseLastBlock(prev.source, stableSource, true)) {
+      return prev.node;
+    }
+
+    const el = renderMarkdownBlock(stableSource, processor, bundle, t, {
+      isFirstBlock: firstBlock,
+    });
+    lastParsedRef.current = { source: stableSource, node: el };
     return el;
-  }, [variant, blockSource, processor, streaming]);
+  }, [variant, blockSource, processor, streaming, isFirstBlock]);
 
   return <>{node}</>;
 });

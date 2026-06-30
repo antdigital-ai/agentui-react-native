@@ -49,6 +49,18 @@ describe('MarkdownRenderer', () => {
     expect(getByText(/72,732.45/)).toBeTruthy();
   });
 
+  it('renders compact gfm table rows', () => {
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'| header | value |\n| --- | --- |\n| 24H Volume | $456.20 M |'}
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(getByText('24H Volume')).toBeTruthy();
+    expect(getByText('$456.20 M')).toBeTruthy();
+  });
+
   it('renders unordered list item text', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,

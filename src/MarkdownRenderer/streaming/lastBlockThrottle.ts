@@ -1,8 +1,9 @@
 import { endsInsideGfmTable } from './gfmTableLine';
 import { endsInsideUnclosedFence } from './fenceTracker';
+import { getStreamingStableMarkdownBlock } from './stableTailMarkdown';
 
-const LAST_BLOCK_THROTTLE_CHARS = 20;
-const BLOCK_BOUNDARY_TRIGGERS = /[\n`|#>*\-!~]/;
+const LAST_BLOCK_THROTTLE_CHARS = 32;
+const BLOCK_BOUNDARY_TRIGGERS = /[\n`|>*!~]/;
 const TABLE_STREAMING_BOUNDARY_TRIGGERS = /[\n#>*!~]/;
 const INLINE_CONTEXT_TRIGGERS = /(?:^|\s)[$[<_]/;
 
@@ -16,9 +17,18 @@ export const shouldReparseLastBlock = (
   if (newSource.length < prevParsedSource.length) return true;
   if (!newSource.startsWith(prevParsedSource)) return true;
   if (endsInsideUnclosedFence(newSource)) return true;
-  const added = newSource.slice(prevParsedSource.length);
+
+  const stableNew = getStreamingStableMarkdownBlock(newSource);
+  const stablePrev = getStreamingStableMarkdownBlock(prevParsedSource);
+  if (stableNew === stablePrev && stableNew !== newSource) return false;
+
+  const comparePrev = stablePrev || prevParsedSource;
+  const compareNew = stableNew || newSource;
+  if (compareNew === comparePrev && compareNew !== newSource) return false;
+
+  const added = compareNew.slice(comparePrev.length);
   if (added.length >= LAST_BLOCK_THROTTLE_CHARS) return true;
-  if (endsInsideGfmTable(newSource)) {
+  if (endsInsideGfmTable(compareNew)) {
     if (TABLE_STREAMING_BOUNDARY_TRIGGERS.test(added)) return true;
     if (INLINE_CONTEXT_TRIGGERS.test(added)) return true;
     return false;

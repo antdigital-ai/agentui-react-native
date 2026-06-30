@@ -40,7 +40,7 @@ export function useStreamingMarkdownReact(
   );
 
   const stableComponents = useShallowMemo(options?.components);
-  const components = useMemo(
+  const componentBundle = useMemo(
     () =>
       buildRnComponents({
         theme,
@@ -117,7 +117,8 @@ export function useStreamingMarkdownReact(
           variant={isLast ? 'tail' : 'sealed'}
           blockSource={blockSource}
           processor={processor}
-          components={components}
+          componentBundle={componentBundle}
+          isFirstBlock={index === 0}
           streaming={!!options?.streaming}
           theme={theme}
         />,
@@ -130,7 +131,7 @@ export function useStreamingMarkdownReact(
     generation,
     visibleCount,
     processor,
-    components,
+    componentBundle,
     options?.streaming,
     theme,
   ]);

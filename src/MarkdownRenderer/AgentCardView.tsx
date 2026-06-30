@@ -3,6 +3,7 @@ import { Text, View, type ViewStyle } from 'react-native';
 import type { MarkdownTheme } from '../theme/defaultTheme';
 import { webClassName } from '../theme/webClassName';
 import { figmaHomeSpacing } from '../theme/figmaHomeSpacing';
+import { figmaHomeTextStyles } from '../theme/figmaHomeTypography';
 import type { AgentCardData, AgentCardField } from './agentCard';
 
 export function agentCardContainerStyle(): ViewStyle {
@@ -69,7 +70,7 @@ export const AgentCardView = memo(function AgentCardView({
       {data.title ? (
         <Text
           style={[
-            theme.typography.tableValue,
+            figmaHomeTextStyles.titleLg,
             { color: theme.colors.text, marginBottom: 4 },
           ]}
         >
@@ -89,7 +90,7 @@ export const AgentCardView = memo(function AgentCardView({
       {data.highlight ? (
         <Text
           style={[
-            theme.typography.tableValue,
+            figmaHomeTextStyles.titleLg,
             { color: theme.colors.text, marginBottom: 8 },
           ]}
         >

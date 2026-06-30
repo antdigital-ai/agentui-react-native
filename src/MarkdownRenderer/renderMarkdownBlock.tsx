@@ -3,15 +3,22 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import type { MarkdownTheme } from '../theme/defaultTheme';
-import type { RendererBlockProps } from './types';
+import type { MarkdownRnComponentsBundle } from './buildRnComponents';
+
+export type RenderMarkdownBlockOptions = {
+  isFirstBlock?: boolean;
+};
 
 export const renderMarkdownBlock = (
   blockContent: string,
   processor: Processor,
-  components: Record<string, React.ComponentType<RendererBlockProps>>,
+  bundle: MarkdownRnComponentsBundle,
   theme: MarkdownTheme,
+  options?: RenderMarkdownBlockOptions,
 ): React.ReactNode => {
   if (!blockContent.trim()) return null;
+  bundle.beginMarkdownBlock(options?.isFirstBlock ?? true);
+  const components = bundle.components;
   try {
     const mdast = processor.parse(blockContent);
     const hast = processor.runSync(mdast);

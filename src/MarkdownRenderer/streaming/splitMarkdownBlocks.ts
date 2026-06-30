@@ -5,6 +5,7 @@ import {
 import { isGfmTableLine } from './gfmTableLine';
 
 const LIST_ITEM_PATTERN = /^(\s*)([-+*]|\d+[.)]) /;
+const ATX_HEADING_PATTERN = /^#{1,6}(?:\s|$)/;
 const BLOCKQUOTE_PATTERN = /^\s*>/;
 const HTML_COMMENT_PATTERN = /^\s*<!--/;
 const FOOTNOTE_DEF_PATTERN = /^\s*\[\^/;
@@ -46,9 +47,11 @@ export const splitMarkdownBlocks = (content: string): string[] => {
     if (pendingBlankLines > 0) {
       const nextIsListItem = LIST_ITEM_PATTERN.test(line);
       const nextIsBlockquote = BLOCKQUOTE_PATTERN.test(line);
+      const prevIsAtxHeading = ATX_HEADING_PATTERN.test(lastNonEmptyLine());
       const nextIsContinuation =
         (inList && (nextIsListItem || /^\s+\S/.test(line))) ||
-        (inBlockquote && nextIsBlockquote);
+        (inBlockquote && nextIsBlockquote) ||
+        (prevIsAtxHeading && nextIsListItem);
 
       const prevIsHtmlComment = HTML_COMMENT_PATTERN.test(lastNonEmptyLine());
       const nextIsFootnoteDef = FOOTNOTE_DEF_PATTERN.test(line);

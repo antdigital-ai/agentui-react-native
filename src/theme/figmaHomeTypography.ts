@@ -46,13 +46,22 @@ export const figmaHomeTextStyles = {
     letterSpacing: 0,
     ...figmaHomeFontFamily,
   } satisfies TextStyle,
-  /** 正文/base on 文本和图标/次要 */
+  /** 正文/base on 文本和图标/次要 — stat table label col */
   label: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',
     letterSpacing: 0,
     color: figma.textSecondary,
+    ...figmaHomeFontFamily,
+  } satisfies TextStyle,
+  /** Stat table value col · 段落/base-强调 · 14 · lh 20 (rows, not title/lg 16) */
+  tableRowValue: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    letterSpacing: 0,
+    color: figma.text,
     ...figmaHomeFontFamily,
   } satisfies TextStyle,
 } as const;

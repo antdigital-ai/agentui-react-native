@@ -8,7 +8,7 @@
   box-sizing: border-box;
 }
 
-.agentui-markdown div,
+.agentui-markdown div:not(.agentui-markdown-table-row):not(.agentui-markdown-table-cell),
 .agentui-markdown span,
 .agentui-markdown p,
 .agentui-markdown h1,
@@ -81,6 +81,74 @@
   overflow-x: auto;
 }
 
+/* Row dividers — Figma `675:23865`; must beat `.agentui-markdown div { border:0 }` on Web */
+.agentui-markdown .agentui-markdown-table-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+  border-top-width: 0;
+  border-left-width: 0;
+  border-right-width: 0;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+.agentui-markdown-table-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.agentui-markdown-table-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.agentui-markdown-table-th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.agentui-markdown-table-td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Figma stat rows: 14/20 label + 14/20 semibold value (override bubble font:inherit on Web) */
+.agentui-markdown .agentui-markdown-table-text-label {
+  font-family: 'Mona Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(0, 2, 2, 0.61);
+}
+
+.agentui-markdown .agentui-markdown-table-text-value {
+  font-family: 'Mona Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #1e1f1f;
+}
+
+.agentui-message-bubble .agentui-markdown-table-text-label,
+.agentui-message-bubble .agentui-markdown-table-text-value {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
 .agentui-markdown-card {
   width: 100%;
   max-width: 100%;
@@ -105,8 +173,10 @@
   box-sizing: border-box;
 }
 
-.agentui-message-bubble div,
-.agentui-message-bubble span,
+.agentui-message-bubble div:not(.agentui-markdown-table-row):not(.agentui-markdown-table-cell),
+.agentui-message-bubble span:not(.agentui-markdown-table-text-label):not(
+    .agentui-markdown-table-text-value
+  ),
 .agentui-message-bubble a {
   margin: 0;
   padding: 0;

@@ -4,6 +4,10 @@ const GFM_TABLE_SEPARATOR_PATTERN = /^\s*\|(\s*:?-+:?\s*\|)+\s*$/;
 export const isGfmTableLine = (line: string): boolean =>
   GFM_TABLE_ROW_PATTERN.test(line) || GFM_TABLE_SEPARATOR_PATTERN.test(line);
 
+/** Last line is part of a GFM table row still being typed (no trailing newline on block). */
+export const isIncompleteGfmTableLine = (line: string): boolean =>
+  /^\s*\|/.test(line);
+
 export const endsInsideGfmTable = (source: string): boolean => {
   const lines = source.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {

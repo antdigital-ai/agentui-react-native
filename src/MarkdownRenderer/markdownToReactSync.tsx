@@ -14,9 +14,11 @@ export const markdownToReactSync = (
   if (!content) return null;
   const theme = mergeTheme(defaultTheme, themePartial);
   const processor = createHastProcessor(remarkPlugins);
-  const allComponents = buildRnComponents({
+  const bundle = buildRnComponents({
     theme,
     userComponents: components || {},
   });
-  return renderMarkdownBlock(content, processor, allComponents, theme);
+  return renderMarkdownBlock(content, processor, bundle, theme, {
+    isFirstBlock: true,
+  });
 };

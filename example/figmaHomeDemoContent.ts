@@ -21,7 +21,7 @@ Largest smart-contract platform by TVL; ETH is its native gas and staking asset.
 
 ##### Subtext
 
-**72,732.45** · -2.63%
+**72,732.45** · <font color="#FF5B5B">-2.63%</font>
 
 | header | value |
 | --- | --- |
@@ -36,12 +36,12 @@ Perp · Trade
 
 **Up 1.8% over 24h with a risk-on market. A major L2 upgrade landed this week; staking ratio**
 
-**Bull Case**
+##### Bull Case
 
 - Expanding spot-ETF access broadens demand
 - Recovering L2 fees; staking locks up float
 
-**Bear Case**
+##### Bear Case
 
 - Expanding spot-ETF access broadens demand
 - Recovering L2 fees; staking locks up float

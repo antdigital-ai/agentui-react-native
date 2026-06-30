@@ -21,6 +21,8 @@ export const agenticColors = {
     text: '#1e1f1f',
     textSecondary: 'rgba(0, 2, 2, 0.61)',
     textCaption: 'rgba(0, 0, 0, 0.27)',
+    /** GFM table row dividers — Figma stat block `675:23865` */
+    tableRowBorder: 'rgba(0, 0, 0, 0.06)',
     userBubbleBackground: 'rgba(90, 0, 255, 0.07)',
     userBubbleCodeBackground: 'rgba(90, 0, 255, 0.12)',
     userBubbleHr: 'rgba(90, 0, 255, 0.25)',
