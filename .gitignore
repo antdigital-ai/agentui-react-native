@@ -4,3 +4,9 @@ lib/
 *.log
 pnpm-lock.yaml
 example/.expo/
+example/.expo-web-test/
+
+# test / coverage
+coverage/
+*.lcov
+.jest/
