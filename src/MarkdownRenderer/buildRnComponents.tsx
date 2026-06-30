@@ -124,8 +124,8 @@ export const buildRnComponents = ({
   const beginMarkdownBlock = (firstBlock = true) => {
     paragraphIndex = 0;
     isFirstBlockInDocument = firstBlock;
-    for (const key of Object.keys(sectionHeadingIndex)) {
-      delete sectionHeadingIndex[key as HeadingLevel];
+    for (const level of [1, 2, 3, 4, 5, 6] as const) {
+      delete sectionHeadingIndex[level];
     }
   };
 
