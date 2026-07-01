@@ -3,7 +3,6 @@ import {
   Image,
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,7 +22,6 @@ import { extractLanguageFromClassName } from './utils/astExtract';
 import { fontTagTextStyle } from './fontStyle';
 import {
   FIGMA_HOME_LINK_COLOR,
-  FIGMA_HOME_LINK_ICON_GAP,
   FIGMA_HOME_LINK_ICON_SIZE,
   markdownLinkIconSource,
 } from './markdownLinkFigma';
@@ -31,7 +29,7 @@ import { shouldRenderUrlAsPlainText } from './utils/urlSafety';
 import { fencedPreCodeMeta, parseAgentCardJson } from './agentCard';
 import { AgentCardView } from './AgentCardView';
 import { useBlockLayout } from './blockLayout';
-import { wrapViewChildren } from './wrapViewChildren';
+import { wrapInlineChildren, wrapViewChildren } from './wrapViewChildren';
 
 type BuildOptions = {
   theme: MarkdownTheme;
@@ -97,14 +95,6 @@ const tableCellWebClass = (
   return `agentui-markdown-table-cell agentui-markdown-table-td agentui-markdown-table-${role}`;
 };
 
-const tableCellTextWebClass = (
-  isHeaderCell: boolean,
-  columnIndex: number,
-): string =>
-  isHeaderCell || columnIndex === 0
-    ? 'agentui-markdown-table-text agentui-markdown-table-text-label'
-    : 'agentui-markdown-table-text agentui-markdown-table-text-value';
-
 export type MarkdownRnComponentsBundle = {
   components: Record<string, React.ComponentType<RendererBlockProps>>;
 };
@@ -148,7 +138,7 @@ export const buildRnComponents = ({
             },
           ]}
         >
-          {children}
+          {wrapInlineChildren(children)}
         </Text>
       );
       return applyEleRender(
@@ -199,7 +189,7 @@ export const buildRnComponents = ({
               Platform.OS === 'android' ? { includeFontPadding: false } : null,
             ]}
           >
-            {children}
+            {wrapInlineChildren(children)}
           </Text>
         </View>
       );
@@ -214,9 +204,11 @@ export const buildRnComponents = ({
     h6: heading(6),
 
     strong: (props) => (
-      <Text style={emphasis}>{props.children}</Text>
+      <Text style={emphasis}>{wrapInlineChildren(props.children)}</Text>
     ),
-    em: (props) => <Text style={{ fontStyle: 'italic' }}>{props.children}</Text>,
+    em: (props) => (
+      <Text style={{ fontStyle: 'italic' }}>{wrapInlineChildren(props.children)}</Text>
+    ),
     font: (props) => {
       const { children, color, size } = props as RendererBlockProps & {
         color?: string;
@@ -227,7 +219,7 @@ export const buildRnComponents = ({
           testID="markdown-font"
           style={fontTagTextStyle(color, size, body)}
         >
-          {children}
+          {wrapInlineChildren(children)}
         </Text>
       );
       return applyEleRender(
@@ -238,18 +230,22 @@ export const buildRnComponents = ({
       );
     },
     del: (props) => (
-      <Text style={{ textDecorationLine: 'line-through' }}>{props.children}</Text>
+      <Text style={{ textDecorationLine: 'line-through' }}>
+        {wrapInlineChildren(props.children)}
+      </Text>
     ),
-    span: (props) => <Text style={body}>{props.children}</Text>,
+    span: (props) => <Text style={body}>{wrapInlineChildren(props.children)}</Text>,
     br: () => <Text style={body}>{'\n'}</Text>,
     u: (props) => (
-      <Text style={{ textDecorationLine: 'underline' }}>{props.children}</Text>
+      <Text style={{ textDecorationLine: 'underline' }}>
+        {wrapInlineChildren(props.children)}
+      </Text>
     ),
     sub: (props) => {
       const baseSize = typeof body.fontSize === 'number' ? body.fontSize : 14;
       return (
         <Text style={{ fontSize: baseSize * 0.85, lineHeight: baseSize * 0.95 }}>
-          {props.children}
+          {wrapInlineChildren(props.children)}
         </Text>
       );
     },
@@ -257,7 +253,7 @@ export const buildRnComponents = ({
       const baseSize = typeof body.fontSize === 'number' ? body.fontSize : 14;
       return (
         <Text style={{ fontSize: baseSize * 0.85, lineHeight: baseSize * 0.95 }}>
-          {props.children}
+          {wrapInlineChildren(props.children)}
         </Text>
       );
     },
@@ -284,18 +280,12 @@ export const buildRnComponents = ({
       const useFigmaLinkChrome = theme.colors.link === FIGMA_HOME_LINK_COLOR;
 
       const defaultDom = useFigmaLinkChrome ? (
-        <Pressable
+        <Text
           onPress={onPress}
           accessibilityRole="link"
           testID="markdown-link"
           {...webClassName('agentui-markdown-link agentui-markdown-link-with-icon')}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            columnGap: FIGMA_HOME_LINK_ICON_GAP,
-            gap: FIGMA_HOME_LINK_ICON_GAP,
-            alignSelf: 'flex-start',
-          }}
+          style={linkTextStyle}
         >
           <Image
             source={markdownLinkIconSource}
@@ -307,8 +297,8 @@ export const buildRnComponents = ({
             accessibilityElementsHidden
             importantForAccessibility="no"
           />
-          <Text style={linkTextStyle}>{children}</Text>
-        </Pressable>
+          {wrapInlineChildren(children)}
+        </Text>
       ) : (
         <Text
           testID="markdown-link"
@@ -316,7 +306,7 @@ export const buildRnComponents = ({
           onPress={onPress}
           {...webClassName('agentui-markdown-link')}
         >
-          {children}
+          {wrapInlineChildren(children)}
         </Text>
       );
       return applyEleRender(eleRender, 'a', props as MarkdownRendererEleProps, defaultDom);
@@ -425,15 +415,12 @@ export const buildRnComponents = ({
             </Text>
           )}
           <View style={{ flex: 1 }}>
-            {React.Children.map(children, (child) => {
-              if (child == null || typeof child === 'boolean') return null;
-              if (React.isValidElement(child)) {
-                return React.cloneElement(
+            {wrapViewChildren(children, body, {
+              mapElement: (child) =>
+                React.cloneElement(
                   child as React.ReactElement<{ inListItem?: boolean }>,
                   { inListItem: true },
-                );
-              }
-              return <Text style={body}>{String(child)}</Text>;
+                ),
             })}
           </View>
         </View>
@@ -484,7 +471,7 @@ export const buildRnComponents = ({
               { color: theme.colors.codeText, whiteSpace: 'pre' } as TextStyle,
             ]}
           >
-            {children}
+            {wrapInlineChildren(children)}
           </Text>
         );
       }
@@ -504,7 +491,7 @@ export const buildRnComponents = ({
             },
           ]}
         >
-          {children}
+          {wrapInlineChildren(children)}
         </Text>
       );
     },
@@ -661,12 +648,7 @@ export const buildRnComponents = ({
             backgroundColor: 'transparent',
           }}
         >
-          <Text
-            {...webClassName(tableCellTextWebClass(true, columnIndex))}
-            style={cellTextStyle}
-          >
-            {props.children}
-          </Text>
+          {wrapViewChildren(props.children, cellTextStyle)}
         </View>
       );
     },
@@ -682,12 +664,7 @@ export const buildRnComponents = ({
             flex: 1,
           }}
         >
-          <Text
-            {...webClassName(tableCellTextWebClass(false, columnIndex))}
-            style={cellTextStyle}
-          >
-            {props.children}
-          </Text>
+          {wrapViewChildren(props.children, cellTextStyle)}
         </View>
       );
     },

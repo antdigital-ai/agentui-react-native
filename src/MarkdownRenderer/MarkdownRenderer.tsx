@@ -3,7 +3,7 @@ import React, {
   useImperativeHandle,
   useMemo,
 } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { webClassName } from '../theme/webClassName';
 import { MarkdownThemeProvider } from '../theme/MarkdownThemeProvider';
 import { compactMarkdownTheme, mergeMarkdownThemeOverrides } from '../theme/mobileTheme';
@@ -57,7 +57,11 @@ const MarkdownRendererInner = forwardRef<
 
   return (
     <View testID={testID} style={style} {...webClassName('agentui-markdown')}>
-      {reactContent}
+      {typeof reactContent === 'string' || typeof reactContent === 'number' ? (
+        <Text>{String(reactContent)}</Text>
+      ) : (
+        reactContent
+      )}
     </View>
   );
 });
