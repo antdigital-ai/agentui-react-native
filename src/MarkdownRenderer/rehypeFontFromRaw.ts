@@ -6,8 +6,94 @@ type HastElement = {
   type: 'element';
   tagName: string;
   properties: Record<string, string>;
-  children: { type: 'text'; value: string }[];
+  children: unknown[];
 };
+
+/** Tags mapped in buildRnComponents or normalized below. */
+const SUPPORTED_HTML_TAGS = new Set([
+  'div',
+  'p',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'strong',
+  'em',
+  'font',
+  'del',
+  'a',
+  'ul',
+  'ol',
+  'li',
+  'blockquote',
+  'code',
+  'pre',
+  'hr',
+  'img',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
+  'input',
+  'span',
+  'br',
+  'u',
+  'sub',
+  'sup',
+]);
+
+function hastElementToText(node: HastElement): string {
+  const parts: string[] = [];
+  for (const child of node.children) {
+    if (typeof child !== 'object' || child == null || !('type' in child)) continue;
+    if ((child as HastText).type === 'text') {
+      parts.push((child as HastText).value);
+      continue;
+    }
+    if ((child as HastElement).type === 'element') {
+      const el = child as HastElement;
+      if (el.tagName.toLowerCase() === 'br') {
+        parts.push('\n');
+      } else {
+        parts.push(hastElementToText(el));
+      }
+    }
+  }
+  return parts.join('');
+}
+
+function normalizeUnsupportedHtmlElements(parentEl: HastParent): void {
+  const { children } = parentEl;
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index];
+    if (typeof child !== 'object' || child == null || (child as HastElement).type !== 'element') {
+      continue;
+    }
+    const el = child as HastElement;
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'br') {
+      children[index] = { type: 'text', value: '\n' };
+      continue;
+    }
+    if (tag === 'b') {
+      el.tagName = 'strong';
+      continue;
+    }
+    if (tag === 'i') {
+      el.tagName = 'em';
+      continue;
+    }
+    if (SUPPORTED_HTML_TAGS.has(tag)) {
+      normalizeUnsupportedHtmlElements(el);
+      continue;
+    }
+    children[index] = { type: 'text', value: hastElementToText(el) };
+  }
+}
 type HastText = { type: 'text'; value: string };
 type HastChild = HastText | HastElement;
 
@@ -36,6 +122,11 @@ function parseAttributes(attrString: string): Record<string, string> {
 
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]+>/g, '');
+}
+
+/** Inline HTML left as text (not parsed into hast elements). */
+function inlineHtmlToText(value: string): string {
+  return stripHtmlTags(value.replace(/<br\s*\/?>/gi, '\n'));
 }
 
 function toFontElement(attrString: string, inner: string): HastElement {
@@ -105,6 +196,11 @@ function coalesceFontInChildren(parentEl: HastParent): void {
       i += expanded.length;
       continue;
     }
+    if (/<[a-z!/]/i.test(combined)) {
+      children.splice(i, j - i, { type: 'text', value: inlineHtmlToText(combined) });
+      i += 1;
+      continue;
+    }
     if (j > i + 1) {
       children.splice(i, j - i, { type: 'text', value: combined });
       i += 1;
@@ -122,6 +218,7 @@ export const rehypeFontFromRaw: Plugin<[], import('unist').Node> = () => (tree) 
   visit(tree, 'element', (node) => {
     if (!node || typeof node !== 'object' || !('children' in node)) return;
     coalesceFontInChildren(node as HastParent);
+    normalizeUnsupportedHtmlElements(node as HastParent);
   });
 
   visit(tree, 'raw', (node, index, parent) => {
@@ -141,4 +238,4 @@ export const rehypeFontFromRaw: Plugin<[], import('unist').Node> = () => (tree) 
     }
   });
 };
-
+

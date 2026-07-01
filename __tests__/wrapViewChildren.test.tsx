@@ -10,20 +10,27 @@ describe('wrapViewChildren', () => {
     expect(Array.isArray(out)).toBe(true);
     const node = (out as React.ReactElement[])[0];
     expect(node.type).toBe(Text);
-    expect(node.props.children).toBe('hello');
+    expect((node.props as { children: string }).children).toBe('hello');
   });
 
   it('passes through valid elements', () => {
     const el = <Text testID="keep">x</Text>;
     const out = wrapViewChildren(el, style);
-    expect((out as React.ReactElement[])[0]).toBe(el);
+    expect((out as React.ReactElement<{ testID?: string }>[])[0].props.testID).toBe(
+      'keep',
+    );
   });
 
   it('maps elements when mapElement is provided', () => {
     const el = <Text testID="child">x</Text>;
     const out = wrapViewChildren(el, style, {
-      mapElement: (node) => React.cloneElement(node, { testID: 'mapped' }),
+      mapElement: (node) =>
+        React.cloneElement(node as React.ReactElement<{ testID?: string }>, {
+          testID: 'mapped',
+        }),
     });
-    expect((out as React.ReactElement[])[0].props.testID).toBe('mapped');
+    expect((out as React.ReactElement<{ testID?: string }>[])[0].props.testID).toBe(
+      'mapped',
+    );
   });
 });

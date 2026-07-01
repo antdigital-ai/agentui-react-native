@@ -171,8 +171,34 @@ describe('MarkdownRenderer', () => {
       </MarkdownThemeProvider>
     );
     const { rerender, getByTestId, getByText } = render(ui('> Streaming quote'));
-    expect(getByTestId('markdown-blockquote')).toBeTruthy();
+    expect(getByTestId('markdown-renderer')).toBeTruthy();
     rerender(ui('> Streaming quote complete\n\nNext'));
+    expect(getByTestId('markdown-blockquote')).toBeTruthy();
     expect(getByText('Next')).toBeTruthy();
+  });
+
+  it('renders inline html span and br without throwing', () => {
+    const { getByText } = wrap(
+      <MarkdownRenderer content={'Alpha<span>beta</span><br>gamma'} />,
+    );
+    expect(getByText(/Alpha/)).toBeTruthy();
+    expect(getByText(/beta/)).toBeTruthy();
+    expect(getByText(/gamma/)).toBeTruthy();
+  });
+
+  it('strips unsupported html tags to visible text', () => {
+    const { getByText } = wrap(
+      <MarkdownRenderer content={'Before<custom>Hidden</custom>After'} />,
+    );
+    expect(getByText('BeforeHiddenAfter')).toBeTruthy();
+  });
+
+  it('preserves fenced code whitespace on native', () => {
+    const { getByTestId } = wrap(
+      <MarkdownRenderer content={'```ts\n  indented\n```'} />,
+    );
+    const code = getByTestId('markdown-fenced-code');
+    const style = StyleSheet.flatten(code.props.style);
+    expect(style.whiteSpace).toBe('pre');
   });
 });

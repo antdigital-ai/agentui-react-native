@@ -240,6 +240,27 @@ export const buildRnComponents = ({
     del: (props) => (
       <Text style={{ textDecorationLine: 'line-through' }}>{props.children}</Text>
     ),
+    span: (props) => <Text style={body}>{props.children}</Text>,
+    br: () => <Text style={body}>{'\n'}</Text>,
+    u: (props) => (
+      <Text style={{ textDecorationLine: 'underline' }}>{props.children}</Text>
+    ),
+    sub: (props) => {
+      const baseSize = typeof body.fontSize === 'number' ? body.fontSize : 14;
+      return (
+        <Text style={{ fontSize: baseSize * 0.85, lineHeight: baseSize * 0.95 }}>
+          {props.children}
+        </Text>
+      );
+    },
+    sup: (props) => {
+      const baseSize = typeof body.fontSize === 'number' ? body.fontSize : 14;
+      return (
+        <Text style={{ fontSize: baseSize * 0.85, lineHeight: baseSize * 0.95 }}>
+          {props.children}
+        </Text>
+      );
+    },
 
     a: (props) => {
       const href = (props.href as string) || '';
@@ -460,8 +481,7 @@ export const buildRnComponents = ({
             testID="markdown-fenced-code"
             style={[
               theme.typography.code,
-              { color: theme.colors.codeText },
-              Platform.OS === 'web' ? ({ whiteSpace: 'pre' } as TextStyle) : null,
+              { color: theme.colors.codeText, whiteSpace: 'pre' } as TextStyle,
             ]}
           >
             {children}
@@ -526,7 +546,8 @@ export const buildRnComponents = ({
             {wrapViewChildren(props.children, {
               ...theme.typography.code,
               color: theme.colors.codeText,
-            })}
+              whiteSpace: 'pre',
+            } as TextStyle)}
           </ScrollView>
         </View>
       );
