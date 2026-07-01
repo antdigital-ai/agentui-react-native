@@ -35,8 +35,9 @@ export const renderMarkdownBlock = (
       return <Text style={theme.typography.body}>{String(result)}</Text>;
     }
     if (React.isValidElement(result)) {
-      return React.cloneElement(result, {
-        children: wrapViewChildren(result.props.children, theme.typography.body),
+      const element = result as React.ReactElement<Record<string, unknown>>;
+      return React.cloneElement(element, {
+        children: wrapViewChildren(element.props.children as React.ReactNode, theme.typography.body),
       });
     }
     return result;
