@@ -7,10 +7,17 @@ const BLOCK_BOUNDARY_TRIGGERS = /[\n`|>*!~]/;
 const TABLE_STREAMING_BOUNDARY_TRIGGERS = /[\n#>*!~]/;
 const INLINE_CONTEXT_TRIGGERS = /(?:^|\s)[$[<_]/;
 
+export type ShouldReparseLastBlockOptions = {
+  /** When callers already computed stable markdown (avoids duplicate scans). */
+  stableNew?: string;
+  stablePrev?: string;
+};
+
 export const shouldReparseLastBlock = (
   prevParsedSource: string | undefined,
   newSource: string,
   streaming: boolean,
+  options?: ShouldReparseLastBlockOptions,
 ): boolean => {
   if (!streaming) return true;
   if (!prevParsedSource) return true;
@@ -18,11 +25,19 @@ export const shouldReparseLastBlock = (
   if (!newSource.startsWith(prevParsedSource)) return true;
   if (endsInsideUnclosedFence(newSource)) return true;
 
-  const stableNew = getStreamingStableMarkdownBlock(newSource);
-  const stablePrev = getStreamingStableMarkdownBlock(prevParsedSource);
-  if (stableNew === stablePrev && stableNew !== newSource) return false;
+  const stableNew =
+    options?.stableNew ?? getStreamingStableMarkdownBlock(newSource);
+  const stablePrev =
+    options?.stablePrev ??
+    (prevParsedSource !== undefined
+      ? getStreamingStableMarkdownBlock(prevParsedSource)
+      : undefined);
 
-  const comparePrev = stablePrev || prevParsedSource;
+  if (stablePrev !== undefined && stableNew === stablePrev && stableNew !== newSource) {
+    return false;
+  }
+
+  const comparePrev = stablePrev ?? prevParsedSource;
   const compareNew = stableNew || newSource;
   if (compareNew === comparePrev && compareNew !== newSource) return false;
 

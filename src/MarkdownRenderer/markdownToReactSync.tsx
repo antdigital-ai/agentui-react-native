@@ -1,5 +1,6 @@
 import React from 'react';
 import { createHastProcessor } from './processor';
+import { withBlockLayout } from './blockLayout';
 import { buildRnComponents } from './buildRnComponents';
 import { renderMarkdownBlock } from './renderMarkdownBlock';
 import { defaultTheme, mergeTheme, type MarkdownThemeOverride } from '../theme/defaultTheme';
@@ -18,7 +19,8 @@ export const markdownToReactSync = (
     theme,
     userComponents: components || {},
   });
-  return renderMarkdownBlock(content, processor, bundle, theme, {
-    isFirstBlock: true,
-  });
+  return withBlockLayout(
+    true,
+    renderMarkdownBlock(content, processor, bundle, theme),
+  );
 };

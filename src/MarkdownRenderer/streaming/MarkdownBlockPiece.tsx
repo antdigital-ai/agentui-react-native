@@ -2,6 +2,7 @@ import React, { memo, useMemo, useRef } from 'react';
 import type { Processor } from '../remarkBundle';
 import type { MarkdownRnComponentsBundle } from '../buildRnComponents';
 import { renderMarkdownBlock } from '../renderMarkdownBlock';
+import { withBlockLayout } from '../blockLayout';
 import type { MarkdownTheme } from '../../theme/defaultTheme';
 import { shouldReparseLastBlock } from './lastBlockThrottle';
 import { getStreamingStableMarkdownBlock } from './stableTailMarkdown';
@@ -32,9 +33,6 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
   const cacheRef = useRef<Map<string, React.ReactNode>>(new Map());
   const processorRef = useRef<Processor | null>(null);
   const bundleRef = useRef(componentBundle);
-  bundleRef.current = componentBundle;
-  const isFirstBlockRef = useRef(isFirstBlock);
-  isFirstBlockRef.current = isFirstBlock;
   const themeRef = useRef(theme);
   themeRef.current = theme;
 
@@ -45,9 +43,17 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
       lastParsedRef.current = null;
     }
 
-    const bundle = bundleRef.current;
+    if (bundleRef.current !== componentBundle) {
+      bundleRef.current = componentBundle;
+      cacheRef.current.clear();
+      lastParsedRef.current = null;
+    }
+
+    const bundle = componentBundle;
     const t = themeRef.current;
-    const firstBlock = isFirstBlockRef.current;
+
+    const wrap = (inner: React.ReactNode) =>
+      withBlockLayout(isFirstBlock, inner);
 
     if (variant === 'sealed') {
       const cached = cacheRef.current.get(blockSource);
@@ -57,17 +63,17 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
         cacheRef.current.set(blockSource, el);
         return el;
       }
-      const el = renderMarkdownBlock(blockSource, processor, bundle, t, {
-        isFirstBlock: firstBlock,
-      });
+      const el = wrap(
+        renderMarkdownBlock(blockSource, processor, bundle, t),
+      );
       cacheRef.current.set(blockSource, el);
       return el;
     }
 
     if (!streaming) {
-      const el = renderMarkdownBlock(blockSource, processor, bundle, t, {
-        isFirstBlock: firstBlock,
-      });
+      const el = wrap(
+        renderMarkdownBlock(blockSource, processor, bundle, t),
+      );
       lastParsedRef.current = { source: blockSource, node: el };
       return el;
     }
@@ -83,16 +89,29 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
       return prev.node;
     }
 
-    if (prev && !shouldReparseLastBlock(prev.source, stableSource, true)) {
+    if (
+      prev &&
+      !shouldReparseLastBlock(prev.source, stableSource, true, {
+        stableNew: stableSource,
+        stablePrev: prev.source,
+      })
+    ) {
       return prev.node;
     }
 
-    const el = renderMarkdownBlock(stableSource, processor, bundle, t, {
-      isFirstBlock: firstBlock,
-    });
+    const el = wrap(
+      renderMarkdownBlock(stableSource, processor, bundle, t),
+    );
     lastParsedRef.current = { source: stableSource, node: el };
     return el;
-  }, [variant, blockSource, processor, streaming, isFirstBlock]);
+  }, [
+    variant,
+    blockSource,
+    processor,
+    componentBundle,
+    streaming,
+    isFirstBlock,
+  ]);
 
   return <>{node}</>;
 });

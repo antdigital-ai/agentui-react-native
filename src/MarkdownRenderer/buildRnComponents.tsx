@@ -30,6 +30,8 @@ import {
 import { shouldRenderUrlAsPlainText } from './utils/urlSafety';
 import { fencedPreCodeMeta, parseAgentCardJson } from './agentCard';
 import { AgentCardView } from './AgentCardView';
+import { useBlockLayout } from './blockLayout';
+import { wrapViewChildren } from './wrapViewChildren';
 
 type BuildOptions = {
   theme: MarkdownTheme;
@@ -105,8 +107,6 @@ const tableCellTextWebClass = (
 
 export type MarkdownRnComponentsBundle = {
   components: Record<string, React.ComponentType<RendererBlockProps>>;
-  /** Call before parsing each split markdown block (streaming pieces). */
-  beginMarkdownBlock: (isFirstBlockInDocument?: boolean) => void;
 };
 
 export const buildRnComponents = ({
@@ -117,28 +117,22 @@ export const buildRnComponents = ({
 }: BuildOptions): MarkdownRnComponentsBundle => {
   const body = textColor(theme);
   const emphasis = emphasisStyle(theme);
-  const sectionHeadingIndex: Partial<Record<HeadingLevel, number>> = {};
-  let paragraphIndex = 0;
-  let isFirstBlockInDocument = true;
-
-  const beginMarkdownBlock = (firstBlock = true) => {
-    paragraphIndex = 0;
-    isFirstBlockInDocument = firstBlock;
-    for (const level of [1, 2, 3, 4, 5, 6] as const) {
-      delete sectionHeadingIndex[level];
-    }
+  const blockquoteTextStyle: TextStyle = {
+    ...body,
+    color: theme.colors.blockquoteText,
   };
 
   const heading =
     (level: 1 | 2 | 3 | 4 | 5 | 6): React.FC<RendererBlockProps> =>
     (props) => {
       const { children } = props;
+      const layout = useBlockLayout();
       const typo = theme.typography[`h${level}`];
       const levelKey = level as HeadingLevel;
       const margins =
         theme.headingMarginByLevel[levelKey] ?? headingMarginsDesktop[levelKey];
-      const seen = sectionHeadingIndex[levelKey] ?? 0;
-      sectionHeadingIndex[levelKey] = seen + 1;
+      const seen = layout.sectionHeadingIndex[levelKey] ?? 0;
+      layout.sectionHeadingIndex[levelKey] = seen + 1;
       const marginTop =
         levelKey === 4 && seen === 0 ? 0 : margins.marginTop;
       const defaultDom = (
@@ -170,7 +164,7 @@ export const buildRnComponents = ({
       const { children, style, ...rest } = props;
       const defaultDom = (
         <View {...rest} style={style as ViewStyle}>
-          {children}
+          {wrapViewChildren(children, body)}
         </View>
       );
       return applyEleRender(eleRender, 'div', props as MarkdownRendererEleProps, defaultDom);
@@ -178,15 +172,16 @@ export const buildRnComponents = ({
 
     p: (props) => {
       const { children } = props;
+      const layout = useBlockLayout();
       const inList = props.inListItem === true;
       let marginBottom = theme.spacing.paragraphGap;
       if (inList) {
         marginBottom = 0;
       } else {
-        const isLeading = paragraphIndex === 0;
-        paragraphIndex += 1;
+        const isLeading = layout.paragraphIndex === 0;
+        layout.paragraphIndex += 1;
         marginBottom =
-          isLeading && isFirstBlockInDocument
+          isLeading && layout.isFirstBlockInDocument
             ? theme.spacing.leadingParagraphGap
             : theme.spacing.paragraphGap;
       }
@@ -307,10 +302,13 @@ export const buildRnComponents = ({
     },
 
     ul: (props) => {
-      const items = React.Children.toArray(props.children).filter(
-        React.isValidElement,
-      );
-      const lastIndex = items.length - 1;
+      const items = React.Children.toArray(props.children);
+      const lastLiIndex = (() => {
+        for (let i = items.length - 1; i >= 0; i--) {
+          if (React.isValidElement(items[i])) return i;
+        }
+        return -1;
+      })();
       return (
         <View
           testID="markdown-list-unordered"
@@ -321,20 +319,25 @@ export const buildRnComponents = ({
           }}
         >
           {items.map((child, index) => {
-            if (!React.isValidElement(child)) return child;
+            if (!React.isValidElement(child)) {
+              return wrapViewChildren(child, body);
+            }
             return React.cloneElement(
               child as React.ReactElement<{ isLastListItem?: boolean }>,
-              { isLastListItem: index === lastIndex },
+              { isLastListItem: index === lastLiIndex },
             );
           })}
         </View>
       );
     },
     ol: (props) => {
-      const items = React.Children.toArray(props.children).filter(
-        React.isValidElement,
-      );
-      const lastIndex = items.length - 1;
+      const items = React.Children.toArray(props.children);
+      const lastLiIndex = (() => {
+        for (let i = items.length - 1; i >= 0; i--) {
+          if (React.isValidElement(items[i])) return i;
+        }
+        return -1;
+      })();
       return (
         <View
           testID="markdown-list-ordered"
@@ -345,15 +348,19 @@ export const buildRnComponents = ({
           }}
         >
           {items.map((child, index) => {
-            if (!React.isValidElement(child)) return child;
+            if (!React.isValidElement(child)) {
+              return wrapViewChildren(child, body);
+            }
+            const listIndex =
+              items.slice(0, index + 1).filter(React.isValidElement).length;
             return React.cloneElement(
               child as React.ReactElement<{
                 listIndex?: number;
                 isLastListItem?: boolean;
               }>,
               {
-                listIndex: index + 1,
-                isLastListItem: index === lastIndex,
+                listIndex,
+                isLastListItem: index === lastLiIndex,
               },
             );
           })}
@@ -433,7 +440,7 @@ export const buildRnComponents = ({
             },
           ]}
         >
-          {props.children}
+          {wrapViewChildren(props.children, blockquoteTextStyle)}
         </View>
       );
       return applyEleRender(
@@ -516,7 +523,10 @@ export const buildRnComponents = ({
           }}
         >
           <ScrollView horizontal showsHorizontalScrollIndicator>
-            {props.children}
+            {wrapViewChildren(props.children, {
+              ...theme.typography.code,
+              color: theme.colors.codeText,
+            })}
           </ScrollView>
         </View>
       );
@@ -557,7 +567,7 @@ export const buildRnComponents = ({
       };
       const tableInner = (
         <View style={{ width: '100%', alignSelf: 'stretch' }}>
-          {props.children}
+          {wrapViewChildren(props.children, body)}
         </View>
       );
       if (Platform.OS === 'web') {
@@ -585,10 +595,14 @@ export const buildRnComponents = ({
       );
     },
     thead: (props) => (
-      <View style={{ width: '100%', alignSelf: 'stretch' }}>{props.children}</View>
+      <View style={{ width: '100%', alignSelf: 'stretch' }}>
+        {wrapViewChildren(props.children, body)}
+      </View>
     ),
     tbody: (props) => (
-      <View style={{ width: '100%', alignSelf: 'stretch' }}>{props.children}</View>
+      <View style={{ width: '100%', alignSelf: 'stretch' }}>
+        {wrapViewChildren(props.children, body)}
+      </View>
     ),
     tr: (props) => {
       const cells = React.Children.toArray(props.children);
@@ -608,7 +622,7 @@ export const buildRnComponents = ({
                   cell as React.ReactElement<{ columnIndex?: number }>,
                   { columnIndex: index },
                 )
-              : cell,
+              : wrapViewChildren(cell, body),
           )}
         </View>
       );
@@ -665,5 +679,5 @@ export const buildRnComponents = ({
     ...userComponents,
   };
 
-  return { components, beginMarkdownBlock };
+  return { components };
 };

@@ -17,7 +17,6 @@ export const renderMarkdownBlock = (
   options?: RenderMarkdownBlockOptions,
 ): React.ReactNode => {
   if (!blockContent.trim()) return null;
-  bundle.beginMarkdownBlock(options?.isFirstBlock ?? true);
   const components = bundle.components;
   try {
     const mdast = processor.parse(blockContent);

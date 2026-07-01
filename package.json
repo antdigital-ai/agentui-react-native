@@ -1,6 +1,6 @@
 {
   "name": "@antdigital/agentui-react-native",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "packageManager": "npm@10.9.2",
   "description": "Agent UI components for React Native — Markdown renderer with streaming",
   "repository": {

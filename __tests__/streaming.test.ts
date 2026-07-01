@@ -1,4 +1,5 @@
 import { splitMarkdownBlocks } from '../src/MarkdownRenderer/streaming/splitMarkdownBlocks';
+import { splitMarkdownBlocksWithCache } from '../src/MarkdownRenderer/streaming/splitMarkdownBlocksCache';
 import { shouldReparseLastBlock } from '../src/MarkdownRenderer/streaming/lastBlockThrottle';
 import { getStreamingStableMarkdownBlock } from '../src/MarkdownRenderer/streaming/stableTailMarkdown';
 
@@ -22,6 +23,52 @@ describe('splitMarkdownBlocks', () => {
     const blocks = splitMarkdownBlocks(md);
     expect(blocks).toEqual(['##### Bull Case\n\n- one\n- two']);
   });
+
+  it('incrementally resplits only the tail block for large append-only growth', () => {
+    const lines = Array.from({ length: 300 }, (_, i) => `Line ${i}`);
+    const base = lines.join('\n');
+    const first = splitMarkdownBlocksWithCache(base, undefined);
+    const extended = `${base}\nTail append`;
+    const second = splitMarkdownBlocksWithCache(extended, first);
+    expect(second.blocks.length).toBeGreaterThanOrEqual(1);
+    expect(second.blocks.slice(0, -1)).toEqual(first.blocks.slice(0, -1));
+    expect(second.blocks[second.blocks.length - 1]).toContain('Tail append');
+    expect(splitMarkdownBlocks(extended)).toEqual(second.blocks);
+  });
+
+  it('returns cached blocks when content is unchanged', () => {
+    const md = 'Alpha\n\nBeta';
+    const first = splitMarkdownBlocksWithCache(md, undefined);
+    const second = splitMarkdownBlocksWithCache(md, first);
+    expect(second).toBe(first);
+    expect(second.blocks).toEqual(['Alpha', 'Beta']);
+  });
+
+  it('full resplit when append adds a blank-line paragraph boundary', () => {
+    const lines = Array.from({ length: 300 }, (_, i) => `Line ${i}`);
+    const base = lines.join('\n');
+    const first = splitMarkdownBlocksWithCache(base, undefined);
+    const extended = `${base}\n\nNew paragraph`;
+    const second = splitMarkdownBlocksWithCache(extended, first);
+    expect(second.blocks).toEqual(splitMarkdownBlocks(extended));
+  });
+
+  it('full resplit when new content is not a prefix of the cache', () => {
+    const lines = Array.from({ length: 300 }, (_, i) => `Line ${i}`);
+    const base = lines.join('\n');
+    const first = splitMarkdownBlocksWithCache(base, undefined);
+    const replaced = `Replaced\n${base}`;
+    const second = splitMarkdownBlocksWithCache(replaced, first);
+    expect(second.blocks).toEqual(splitMarkdownBlocks(replaced));
+  });
+
+  it('does not use incremental path below line-count threshold', () => {
+    const base = Array.from({ length: 50 }, (_, i) => `Line ${i}`).join('\n');
+    const first = splitMarkdownBlocksWithCache(base, undefined);
+    const extended = `${base}\nTail`;
+    const second = splitMarkdownBlocksWithCache(extended, first);
+    expect(second.blocks).toEqual(splitMarkdownBlocks(extended));
+  });
 });
 
 describe('shouldReparseLastBlock', () => {
@@ -43,6 +90,32 @@ describe('shouldReparseLastBlock', () => {
     expect(shouldReparseLastBlock(prev, next, true)).toBe(true);
   });
 
+  it('skips reparse when precomputed stable strings match', () => {
+    const stable = 'Intro\n\n';
+    const raw = 'Intro\n\n### Bull';
+    expect(
+      shouldReparseLastBlock(stable, raw, true, {
+        stableNew: stable,
+        stablePrev: stable,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not reparse while ATX line is still growing', () => {
+    const prev = 'Intro\n\n';
+    const next = 'Intro\n\n### Bull';
+    const stableNext = getStreamingStableMarkdownBlock(next);
+    expect(stableNext).toBe(prev);
+    expect(
+      shouldReparseLastBlock(prev, next, true, {
+        stableNew: stableNext,
+        stablePrev: prev,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('getStreamingStableMarkdownBlock', () => {
   it('holds incomplete ATX heading line until newline', () => {
     expect(getStreamingStableMarkdownBlock('#### Bull')).toBe('');
     expect(getStreamingStableMarkdownBlock('Intro\n\n#### Bull')).toBe('Intro\n\n');
@@ -57,13 +130,10 @@ describe('shouldReparseLastBlock', () => {
     expect(getStreamingStableMarkdownBlock('- item done\n')).toBe('- item done\n');
   });
 
-  it('does not reparse while ATX line is still growing', () => {
-    const prev = 'Intro\n\n';
-    const next = 'Intro\n\n### Bull';
-    expect(getStreamingStableMarkdownBlock(next)).toBe(prev);
-    expect(shouldReparseLastBlock(prev, getStreamingStableMarkdownBlock(next), true)).toBe(
-      false,
-    );
+  it('holds incomplete blockquote line until newline', () => {
+    expect(getStreamingStableMarkdownBlock('> Streaming quote')).toBe('');
+    expect(getStreamingStableMarkdownBlock('Intro\n\n> partial')).toBe('Intro\n\n');
+    expect(getStreamingStableMarkdownBlock('> Done line\n')).toBe('> Done line\n');
   });
 
   it('holds incomplete font tag until closing tag is complete', () => {
@@ -108,4 +178,10 @@ describe('shouldReparseLastBlock', () => {
     expect(getStreamingStableMarkdownBlock('Line **bold')).toBe('Line ');
     expect(getStreamingStableMarkdownBlock('**done**\n**open')).toBe('**done**\n');
   });
+
+  it('holds incomplete __ bold until closing delimiter', () => {
+    expect(getStreamingStableMarkdownBlock('__Bear Case')).toBe('');
+    expect(getStreamingStableMarkdownBlock('__Bear Case__')).toBe('__Bear Case__');
+  });
 });
+

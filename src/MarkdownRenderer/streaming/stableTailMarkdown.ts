@@ -99,6 +99,7 @@ export function getStreamingStableMarkdownBlock(source: string): string {
 
   const isIncompleteStructure =
     /^(#{1,6})(?:\s|$)/.test(lastLine) ||
+    /^\s*>\s?/.test(lastLine) ||
     /^\s*([-+*]|\d+[.)])\s/.test(lastLine) ||
     /^\s*[-+*]\s?$/.test(lastLine) ||
     /^\s*\d+[.)]\s?$/.test(lastLine) ||

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { createHastProcessor } from './processor';
 import { buildRnComponents } from './buildRnComponents';
 import { useMarkdownThemeWithOverride } from '../theme/MarkdownThemeProvider';
@@ -6,7 +6,8 @@ import type {
   RendererBlockProps,
   UseMarkdownToReactOptions,
 } from './types';
-import { splitMarkdownBlocks } from './streaming/splitMarkdownBlocks';
+import { splitMarkdownBlocksWithCache } from './streaming/splitMarkdownBlocksCache';
+import type { MarkdownBlocksSplitCache } from './streaming/splitMarkdownBlocksCache';
 import { MarkdownBlockPiece } from './streaming/MarkdownBlockPiece';
 import { shouldResetRevisionProgress } from './streaming/revisionPolicy';
 import { useProgressiveBlocks } from './streaming/useProgressiveBlocks';
@@ -85,15 +86,24 @@ export function useStreamingMarkdownReact(
 
   const generation = nextGeneration;
 
+  const splitCacheRef = useRef<MarkdownBlocksSplitCache | undefined>(undefined);
+  const splitGenerationRef = useRef(generation);
+
   const blocks = useMemo(() => {
     if (!content) return EMPTY_BLOCKS;
+    if (splitGenerationRef.current !== generation) {
+      splitGenerationRef.current = generation;
+      splitCacheRef.current = undefined;
+    }
     try {
-      const splitBlocks = splitMarkdownBlocks(content);
-      return splitBlocks.length > 0 ? splitBlocks : EMPTY_BLOCKS;
+      const next = splitMarkdownBlocksWithCache(content, splitCacheRef.current);
+      splitCacheRef.current = next;
+      return next.blocks.length > 0 ? next.blocks : EMPTY_BLOCKS;
     } catch {
+      splitCacheRef.current = undefined;
       return EMPTY_BLOCKS;
     }
-  }, [content]);
+  }, [content, generation]);
 
   const visibleCount = useProgressiveBlocks(
     blocks.length,

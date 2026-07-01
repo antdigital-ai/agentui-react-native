@@ -1,7 +1,9 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { MarkdownRenderer } from '../src/MarkdownRenderer/MarkdownRenderer';
 import { MarkdownThemeProvider } from '../src/theme/MarkdownThemeProvider';
+import { figmaHomeSpacing } from '../src/theme/figmaHomeSpacing';
 
 const wrap = (ui: React.ReactElement) =>
   render(<MarkdownThemeProvider>{ui}</MarkdownThemeProvider>);
@@ -81,5 +83,96 @@ describe('MarkdownRenderer', () => {
     expect(getAllByTestId('markdown-font').length).toBe(2);
     expect(getByText('+3.2%')).toBeTruthy();
     expect(getByText('-1.28%')).toBeTruthy();
+  });
+
+  it('uses leading paragraph gap only on the first split block', () => {
+    const { getAllByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'First block line\n\nSecond block line'}
+      />,
+    );
+    const paragraphs = getAllByTestId('markdown-paragraph');
+    expect(paragraphs).toHaveLength(2);
+    const firstGap = StyleSheet.flatten(paragraphs[0].props.style).marginBottom;
+    const secondGap = StyleSheet.flatten(paragraphs[1].props.style).marginBottom;
+    expect(firstGap).toBe(figmaHomeSpacing.contentBlockGap);
+    expect(secondGap).toBe(figmaHomeSpacing.listItemGap);
+  });
+
+  it('hides incomplete ** markup while streaming', () => {
+    const ui = (content: string) => (
+      <MarkdownThemeProvider>
+        <MarkdownRenderer
+          streaming
+          throttleOptions={{ enabled: false }}
+          content={content}
+        />
+      </MarkdownThemeProvider>
+    );
+    const { rerender, getByText, queryByText } = render(ui('Line **bold'));
+    expect(getByText('Line')).toBeTruthy();
+    expect(queryByText('bold')).toBeNull();
+    rerender(ui('Line **bold**'));
+    expect(getByText('bold')).toBeTruthy();
+  });
+
+  it('applies updated theme spacing after rerender', () => {
+    const ui = (gap: number) => (
+      <MarkdownThemeProvider>
+        <MarkdownRenderer
+          content="Hello"
+          theme={{
+            spacing: {
+              paragraphGap: gap,
+              leadingParagraphGap: gap,
+            },
+          }}
+        />
+      </MarkdownThemeProvider>
+    );
+    const { rerender, getByTestId } = render(ui(4));
+    expect(StyleSheet.flatten(getByTestId('markdown-paragraph').props.style).marginBottom).toBe(
+      4,
+    );
+    rerender(ui(99));
+    expect(StyleSheet.flatten(getByTestId('markdown-paragraph').props.style).marginBottom).toBe(
+      99,
+    );
+  });
+
+  it('renders red font tag in compact stat line', () => {
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'**72,732.45** · <font color="#FF5B5B">-2.63%</font>'}
+      />,
+    );
+    expect(getByText('-2.63%')).toBeTruthy();
+    expect(getByTestId('markdown-font')).toBeTruthy();
+  });
+
+  it('renders blockquote body text', () => {
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer content={'Intro\n\n> Quote line one\n> line two\n\nAfter'} />,
+    );
+    expect(getByTestId('markdown-blockquote')).toBeTruthy();
+    expect(getByText(/Quote line one/)).toBeTruthy();
+  });
+
+  it('renders blockquote while streaming without throwing', () => {
+    const ui = (content: string) => (
+      <MarkdownThemeProvider>
+        <MarkdownRenderer
+          streaming
+          throttleOptions={{ enabled: false }}
+          content={content}
+        />
+      </MarkdownThemeProvider>
+    );
+    const { rerender, getByTestId, getByText } = render(ui('> Streaming quote'));
+    expect(getByTestId('markdown-blockquote')).toBeTruthy();
+    rerender(ui('> Streaming quote complete\n\nNext'));
+    expect(getByText('Next')).toBeTruthy();
   });
 });
