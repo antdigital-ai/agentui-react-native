@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import type { MarkdownTheme } from '../theme/defaultTheme';
 import type { MarkdownRnComponentsBundle } from './buildRnComponents';
+import { wrapViewChildren } from './wrapViewChildren';
 
 export type RenderMarkdownBlockOptions = {
   isFirstBlock?: boolean;
@@ -21,13 +22,24 @@ export const renderMarkdownBlock = (
   try {
     const mdast = processor.parse(blockContent);
     const hast = processor.runSync(mdast);
-    return toJsxRuntime(hast as Parameters<typeof toJsxRuntime>[0], {
+    const result = toJsxRuntime(hast as Parameters<typeof toJsxRuntime>[0], {
       Fragment,
       jsx: jsx as typeof jsx,
       jsxs: jsxs as typeof jsxs,
       components: components as Record<string, React.ComponentType>,
       passNode: true,
     });
+    // RN requires all text nodes to be wrapped in <Text>, not bare strings.
+    // hast-util-to-jsx-runtime may return bare strings for root-level text nodes.
+    if (typeof result === 'string' || typeof result === 'number') {
+      return <Text style={theme.typography.body}>{String(result)}</Text>;
+    }
+    if (React.isValidElement(result)) {
+      return React.cloneElement(result, {
+        children: wrapViewChildren(result.props.children, theme.typography.body),
+      });
+    }
+    return result;
   } catch {
     return (
       <View
