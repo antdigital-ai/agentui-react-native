@@ -1,0 +1,34 @@
+---
+description: All features must work on both web and native, implemented native-first
+alwaysApply: true
+---
+
+# 跨端支持：Web 与 Native 都要支持，优先 Native 实现
+
+本库通过 react-native-web 同时服务 Native (iOS/Android) 和 Web。任何新功能或改动都必须在两端都能正常工作。
+
+## 核心原则
+
+- **优先用 React Native 原语实现**：`View` / `Text` / `ScrollView` / `Image` / `Pressable`、`StyleSheet`、`onLayout`、`Platform` 等。react-native-web 会把它们映射到 Web，一套实现两端通用。
+- **不要为了 Web 单独写 CSS 布局**：布局逻辑应放在内联 RN 样式或组件里，而不是 `.css` 文件。CSS 仅用于 RN 无法表达的浏览器级重置（如 `box-sizing`、UA 样式清除）。
+- **避免只在一端可用的写法**：不要直接依赖 `document` / `window` / DOM API，除非用 `Platform.OS === 'web'` 守卫并给 Native 提供等价实现。
+- **平台差异要收敛**：确需分支时用 `Platform.OS` / `Platform.select`，并保证两端行为一致（输出、可访问性、交互一致）。
+
+## 反例 → 正例
+
+```tsx
+// ❌ 只在 Web 生效，Native 上 className/CSS 不起作用
+<View className="my-scroll-container" />
+
+// ✅ RN 原语，两端一致；className 仅作 Web 样式钩子，布局由 RN 样式驱动
+<ScrollView horizontal showsHorizontalScrollIndicator style={{ width: '100%' }}>
+  {children}
+</ScrollView>
+```
+
+## 提交前自检
+
+- [ ] 该功能在 Native 上验证过（真机/模拟器或 RN 测试）
+- [ ] 该功能在 Web 上验证过（react-native-web）
+- [ ] 没有引入仅单端可用的 API 且缺少守卫/降级
+- [ ] 布局主要由 RN 样式驱动，CSS 仅做必要重置
