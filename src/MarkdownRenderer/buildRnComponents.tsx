@@ -289,6 +289,11 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
 }) => {
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
   const horizontalPadding = theme.spacing.tableCellPadding * 2;
+  // Reserve one text line so empty cells keep rows at a consistent height.
+  const lineHeight =
+    typeof cellTextStyle.lineHeight === 'number'
+      ? cellTextStyle.lineHeight
+      : undefined;
 
   const handleContentLayout = React.useCallback(
     (event: LayoutChangeEvent) => {
@@ -315,12 +320,16 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
       style={{
         ...tableCellPaddingStyle(theme),
         ...cellLayoutStyle,
+        justifyContent: 'center',
         backgroundColor: isHeaderCell
           ? theme.colors.tableHeaderBackground
           : undefined,
       }}
     >
-      <View style={{ alignSelf: 'flex-start' }} onLayout={handleContentLayout}>
+      <View
+        style={{ alignSelf: 'flex-start', minHeight: lineHeight }}
+        onLayout={handleContentLayout}
+      >
         {wrapViewChildren(children, cellTextStyle)}
       </View>
     </View>

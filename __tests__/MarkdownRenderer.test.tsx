@@ -76,6 +76,18 @@ describe('MarkdownRenderer', () => {
     expect(getByText(longValue)).toBeTruthy();
   });
 
+  it('renders table with empty cells without crashing', () => {
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'| 字段 | 值 |\n| --- | --- |\n| 用户名 |  |\n|  | 在线 |'}
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(getByText('用户名')).toBeTruthy();
+    expect(getByText('在线')).toBeTruthy();
+  });
+
   it('renders unordered list item text', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,
