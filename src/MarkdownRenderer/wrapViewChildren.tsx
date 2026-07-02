@@ -30,29 +30,31 @@ export function wrapViewChildren(
   textStyle: TextStyle,
   options?: WrapViewChildrenOptions,
 ): React.ReactNode {
-  return flattenChildren(children).map((child, index) => {
-    if (child == null || typeof child === 'boolean') return null;
-    if (typeof child === 'string' || typeof child === 'number') {
-      const value = String(child);
-      if (value.length === 0) return null;
+  return flattenChildren(children)
+    .map((child, index) => {
+      if (child == null || typeof child === 'boolean') return null;
+      if (typeof child === 'string' || typeof child === 'number') {
+        const value = String(child);
+        if (value.trim().length === 0) return null;
+        return (
+          <Text key={`t-${index}`} style={textStyle}>
+            {value}
+          </Text>
+        );
+      }
+      if (React.isValidElement(child)) {
+        const mapped = options?.mapElement ? options.mapElement(child) : child;
+        return React.isValidElement(mapped)
+          ? React.cloneElement(mapped, { key: mapped.key ?? `n-${index}` })
+          : mapped;
+      }
       return (
         <Text key={`t-${index}`} style={textStyle}>
-          {value}
+          {String(child)}
         </Text>
       );
-    }
-    if (React.isValidElement(child)) {
-      const mapped = options?.mapElement ? options.mapElement(child) : child;
-      return React.isValidElement(mapped)
-        ? React.cloneElement(mapped, { key: mapped.key ?? `n-${index}` })
-        : mapped;
-    }
-    return (
-      <Text key={`t-${index}`} style={textStyle}>
-        {String(child)}
-      </Text>
-    );
-  });
+    })
+    .filter((child) => child != null);
 }
 
 /** Inline markdown host (`<Text>`): flatten Fragment, keep strings as direct Text children. */

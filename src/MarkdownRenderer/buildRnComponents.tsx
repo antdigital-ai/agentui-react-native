@@ -67,8 +67,8 @@ const tableRowBorderStyle = (theme: MarkdownTheme): ViewStyle => ({
 const tableCellPaddingStyle = (theme: MarkdownTheme): ViewStyle => ({
   paddingTop: theme.spacing.tableCellPadding,
   paddingBottom: theme.spacing.tableCellPadding,
-  paddingLeft: 0,
-  paddingRight: 0,
+  paddingLeft: 4,
+  paddingRight: 4,
 });
 
 const tableCellTextStyle = (
@@ -442,13 +442,31 @@ export const buildRnComponents = ({
             {
               borderLeftColor: theme.colors.blockquoteBorder,
               backgroundColor: theme.colors.blockquoteBackground,
-              paddingTop: theme.spacing.blockquotePadding,
-              paddingBottom: theme.spacing.blockquotePadding,
-              paddingRight: theme.spacing.blockquotePadding,
+              paddingTop: theme.spacing.blockquotePadding / 2,
+              paddingBottom: theme.spacing.blockquotePadding / 2,
+              paddingRight: theme.spacing.blockquotePadding / 2,
+              marginBottom: theme.spacing.paragraphGap,
             },
           ]}
         >
-          {wrapViewChildren(props.children, blockquoteTextStyle)}
+          {wrapViewChildren(props.children, blockquoteTextStyle, {
+            mapElement: (child) => {
+              const paragraph = child as any;
+              if (
+                React.isValidElement(child) &&
+                typeof paragraph.props.testID === 'string' &&
+                paragraph.props.testID === 'markdown-paragraph'
+              ) {
+                return React.cloneElement(child, {
+                  style: {
+                    ...paragraph.props.style,
+                    marginBottom: 0,
+                  },
+                } as any);
+              }
+              return child;
+            },
+          })}
         </View>
       );
       return applyEleRender(
@@ -571,6 +589,8 @@ export const buildRnComponents = ({
       const tableBlockStyle: ViewStyle = {
         width: '100%',
         alignSelf: 'stretch',
+        borderColor: theme.colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
         marginVertical: theme.spacing.tableBlockMarginVertical,
       };
       const tableInner = (
@@ -661,6 +681,7 @@ export const buildRnComponents = ({
           style={{
             ...tableCellPaddingStyle(theme),
             minWidth: 0,
+          
             flex: 1,
           }}
         >
