@@ -75,42 +75,6 @@
   border: 0;
 }
 
-.agentui-markdown-table {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-/* Row dividers — Figma `675:23865`; must beat `.agentui-markdown div { border:0 }` on Web */
-.agentui-markdown .agentui-markdown-table-row {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  align-items: stretch;
-  box-sizing: border-box;
-  border-top-width: 0;
-  border-left-width: 0;
-  border-right-width: 0;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-
-.agentui-markdown-table-row {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  align-items: stretch;
-  box-sizing: border-box;
-}
-
-.agentui-markdown-table-cell {
-  flex: 1 1 0;
-  min-width: 0;
-  box-sizing: border-box;
-  background: transparent;
-}
-
 .agentui-markdown-table-th {
   padding-top: 6px;
   padding-bottom: 6px;

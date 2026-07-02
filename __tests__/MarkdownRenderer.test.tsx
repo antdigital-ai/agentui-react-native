@@ -63,6 +63,19 @@ describe('MarkdownRenderer', () => {
     expect(getByText('$456.20 M')).toBeTruthy();
   });
 
+  it('renders full long table cell text for horizontal scroll', () => {
+    const longValue =
+      'did:anvita:0x169b9fd401bf4be4f6f7market-information-discovery-service';
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={`| 字段 | 值 |\n| --- | --- |\n| Agent 能力 | ${longValue} |`}
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(getByText(longValue)).toBeTruthy();
+  });
+
   it('renders unordered list item text', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,
