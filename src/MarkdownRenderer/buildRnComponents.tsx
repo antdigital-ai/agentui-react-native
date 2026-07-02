@@ -61,15 +61,13 @@ const emphasisStyle = (theme: MarkdownTheme): TextStyle => ({
 });
 
 const tableRowBorderStyle = (theme: MarkdownTheme): ViewStyle => ({
-  borderBottomWidth: StyleSheet.hairlineWidth,
+  borderBottomWidth: 1,
   borderBottomColor: theme.colors.border,
 });
 
 const tableCellPaddingStyle = (theme: MarkdownTheme): ViewStyle => ({
-  paddingTop: theme.spacing.tableCellPadding,
-  paddingBottom: theme.spacing.tableCellPadding,
-  paddingLeft: 4,
-  paddingRight: 4,
+  paddingVertical: theme.spacing.tableCellPadding,
+  paddingHorizontal: theme.spacing.tableCellPadding,
 });
 
 const tableCellTextStyle = (
@@ -77,12 +75,15 @@ const tableCellTextStyle = (
   columnIndex: number,
   isHeaderCell: boolean,
 ): TextStyle => {
-  if (isHeaderCell) {
-    return theme.typography.tableLabel;
-  }
-  return columnIndex === 0
-    ? theme.typography.tableLabel
-    : theme.typography.tableValue;
+  const typography =
+    isHeaderCell || columnIndex === 0
+      ? theme.typography.tableLabel
+      : theme.typography.tableValue;
+  const color =
+    isHeaderCell || columnIndex === 0
+      ? theme.colors.textMuted
+      : theme.colors.text;
+  return { ...typography, color };
 };
 
 const tableCellWebClass = (
@@ -96,11 +97,14 @@ const tableCellWebClass = (
   return `agentui-markdown-table-cell agentui-markdown-table-td agentui-markdown-table-${role}`;
 };
 
-const TABLE_CELL_HORIZONTAL_PADDING = 8;
 
 type ReportColumnWidth = (columnIndex: number, width: number) => void;
 
+type TableLayoutMode = 'fill' | 'scroll';
+
 type TableColumnContextValue = {
+  layoutMode: TableLayoutMode;
+  layoutReady: boolean;
   widths: number[];
   report: ReportColumnWidth;
 };
@@ -109,13 +113,23 @@ const noopReport: ReportColumnWidth = () => {};
 
 const EMPTY_WIDTHS: number[] = [];
 
+const sumColumnWidths = (widths: number[]): number =>
+  widths.reduce((total, width) => total + (width ?? 0), 0);
+
 const TableColumnContext = React.createContext<TableColumnContextValue | null>(
   null,
 );
 
+const defaultTableContext: TableColumnContextValue = {
+  layoutMode: 'fill',
+  layoutReady: false,
+  widths: EMPTY_WIDTHS,
+  report: noopReport,
+};
+
 const useTableColumnWidths = (): TableColumnContextValue => {
   const ctx = React.useContext(TableColumnContext);
-  return ctx ?? { widths: EMPTY_WIDTHS, report: noopReport };
+  return ctx ?? defaultTableContext;
 };
 
 const scheduleFrame = (cb: () => void): number => {
@@ -139,13 +153,18 @@ type MarkdownTableProps = {
   children: React.ReactNode;
 };
 
+const tableSectionStyle = (layoutMode: TableLayoutMode): ViewStyle =>
+  layoutMode === 'fill'
+    ? { width: '100%', alignSelf: 'stretch' }
+    : { alignSelf: 'flex-start' };
+
 const MarkdownTable: React.FC<MarkdownTableProps> = ({
   theme,
   body,
   children,
 }) => {
+  const [containerWidth, setContainerWidth] = React.useState(0);
   const [widths, setWidths] = React.useState<number[]>(EMPTY_WIDTHS);
-  // Source of truth for measured column maxima; batched into `widths` per frame.
   const measuredRef = React.useRef<number[]>([]);
   const frameRef = React.useRef<number | null>(null);
 
@@ -185,10 +204,23 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     [],
   );
 
+  const layoutMode: TableLayoutMode =
+    containerWidth > 0 && sumColumnWidths(widths) > containerWidth
+      ? 'scroll'
+      : 'fill';
+  const layoutReady = containerWidth > 0 && sumColumnWidths(widths) > 0;
+
   const contextValue = React.useMemo<TableColumnContextValue>(
-    () => ({ widths, report }),
-    [widths, report],
+    () => ({ layoutMode, layoutReady, widths, report }),
+    [layoutMode, layoutReady, widths, report],
   );
+
+  const handleContainerLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    if (width > 0) {
+      setContainerWidth((prev) => (prev === width ? prev : width));
+    }
+  }, []);
 
   const tableBlockStyle: ViewStyle = {
     width: '100%',
@@ -196,6 +228,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     borderColor: theme.colors.border,
     borderWidth: StyleSheet.hairlineWidth,
     marginVertical: theme.spacing.tableBlockMarginVertical,
+    overflow: 'hidden',
   };
 
   return (
@@ -203,15 +236,22 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
       testID="markdown-table"
       {...webClassName('agentui-markdown-table')}
       style={tableBlockStyle}
+      onLayout={handleContainerLayout}
     >
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator
+        scrollEnabled={layoutMode === 'scroll'}
+        showsHorizontalScrollIndicator={Platform.OS === 'web'}
         style={{ width: '100%' }}
         contentContainerStyle={{ minWidth: '100%' }}
       >
         <TableColumnContext.Provider value={contextValue}>
-          <View style={{ alignSelf: 'flex-start' }}>
+          <View
+            style={{
+              ...tableSectionStyle(layoutMode),
+              opacity: layoutReady ? 1 : 0,
+            }}
+          >
             {wrapViewChildren(children, body)}
           </View>
         </TableColumnContext.Provider>
@@ -224,6 +264,7 @@ type MarkdownTableCellProps = {
   theme: MarkdownTheme;
   columnIndex: number;
   isHeaderCell: boolean;
+  layoutMode: TableLayoutMode;
   columnWidth?: number;
   reportWidth: ReportColumnWidth;
   children: React.ReactNode;
@@ -232,6 +273,7 @@ type MarkdownTableCellProps = {
 // Props injected onto th/td elements by the `tr` renderer via cloneElement.
 type TableCellInjectedProps = {
   columnIndex?: number;
+  layoutMode?: TableLayoutMode;
   columnWidth?: number;
   reportWidth?: ReportColumnWidth;
 };
@@ -240,31 +282,42 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
   theme,
   columnIndex,
   isHeaderCell,
+  layoutMode,
   columnWidth,
   reportWidth,
   children,
 }) => {
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
+  const horizontalPadding = theme.spacing.tableCellPadding * 2;
 
   const handleContentLayout = React.useCallback(
     (event: LayoutChangeEvent) => {
       const { width } = event.nativeEvent.layout;
       if (width > 0) {
-        reportWidth(columnIndex, width + TABLE_CELL_HORIZONTAL_PADDING);
+        reportWidth(columnIndex, width + horizontalPadding);
       }
     },
-    [columnIndex, reportWidth],
+    [columnIndex, horizontalPadding, reportWidth],
   );
+
+  const cellLayoutStyle: ViewStyle =
+    layoutMode === 'fill'
+      ? { flex: 1, minWidth: 0 }
+      : {
+          flexGrow: 0,
+          flexShrink: 0,
+          ...(columnWidth ? { width: columnWidth } : undefined),
+        };
 
   return (
     <View
       {...webClassName(tableCellWebClass(isHeaderCell, columnIndex))}
       style={{
         ...tableCellPaddingStyle(theme),
-        flexGrow: 0,
-        flexShrink: 0,
-        ...(columnWidth ? { width: columnWidth } : undefined),
-        backgroundColor: isHeaderCell ? 'transparent' : undefined,
+        ...cellLayoutStyle,
+        backgroundColor: isHeaderCell
+          ? theme.colors.tableHeaderBackground
+          : undefined,
       }}
     >
       <View style={{ alignSelf: 'flex-start' }} onLayout={handleContentLayout}>
@@ -274,9 +327,49 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
   );
 };
 
-// Cells only depend on their own column width prop, so a column widening elsewhere
-// does not re-render them (children/theme/report identities stay stable).
 const MarkdownTableCell = React.memo(MarkdownTableCellBase);
+
+type MarkdownTableRowProps = {
+  theme: MarkdownTheme;
+  body: TextStyle;
+  children: React.ReactNode;
+};
+
+const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
+  theme,
+  body,
+  children,
+}) => {
+  const { layoutMode, widths, report } = useTableColumnWidths();
+  const cells = React.Children.toArray(children);
+
+  return (
+    <View
+      {...webClassName('agentui-markdown-table-row')}
+      style={{
+        ...tableSectionStyle(layoutMode),
+        flexDirection: 'row',
+        ...tableRowBorderStyle(theme),
+      }}
+    >
+      {cells.map((cell, index) =>
+        React.isValidElement(cell)
+          ? React.cloneElement(
+              cell as React.ReactElement<TableCellInjectedProps>,
+              {
+                columnIndex: index,
+                layoutMode,
+                columnWidth: widths[index],
+                reportWidth: report,
+              },
+            )
+          : wrapViewChildren(cell, body),
+      )}
+    </View>
+  );
+};
+
+const MarkdownTableRow = React.memo(MarkdownTableRowBase);
 
 export type MarkdownRnComponentsBundle = {
   components: Record<string, React.ComponentType<RendererBlockProps>>;
@@ -773,51 +866,36 @@ export const buildRnComponents = ({
         {props.children}
       </MarkdownTable>
     ),
-    thead: (props) => (
-      <View style={{ alignSelf: 'flex-start' }}>
-        {wrapViewChildren(props.children, body)}
-      </View>
-    ),
-    tbody: (props) => (
-      <View style={{ alignSelf: 'flex-start' }}>
-        {wrapViewChildren(props.children, body)}
-      </View>
-    ),
-    tr: (props) => {
-      const { widths, report } = useTableColumnWidths();
-      const cells = React.Children.toArray(props.children);
+    thead: (props) => {
+      const { layoutMode } = useTableColumnWidths();
       return (
-        <View
-          {...webClassName('agentui-markdown-table-row')}
-          style={{
-            alignSelf: 'flex-start',
-            flexDirection: 'row',
-            ...tableRowBorderStyle(theme),
-          }}
-        >
-          {cells.map((cell, index) =>
-            React.isValidElement(cell)
-              ? React.cloneElement(
-                  cell as React.ReactElement<TableCellInjectedProps>,
-                  {
-                    columnIndex: index,
-                    columnWidth: widths[index],
-                    reportWidth: report,
-                  },
-                )
-              : wrapViewChildren(cell, body),
-          )}
+        <View style={tableSectionStyle(layoutMode)}>
+          {wrapViewChildren(props.children, body)}
         </View>
       );
     },
+    tbody: (props) => {
+      const { layoutMode } = useTableColumnWidths();
+      return (
+        <View style={tableSectionStyle(layoutMode)}>
+          {wrapViewChildren(props.children, body)}
+        </View>
+      );
+    },
+    tr: (props) => (
+      <MarkdownTableRow theme={theme} body={body}>
+        {props.children}
+      </MarkdownTableRow>
+    ),
     th: (props) => {
-      const { columnIndex, columnWidth, reportWidth } =
+      const { columnIndex, layoutMode, columnWidth, reportWidth } =
         props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell
+          layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >
@@ -826,13 +904,14 @@ export const buildRnComponents = ({
       );
     },
     td: (props) => {
-      const { columnIndex, columnWidth, reportWidth } =
+      const { columnIndex, layoutMode, columnWidth, reportWidth } =
         props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell={false}
+          layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >
