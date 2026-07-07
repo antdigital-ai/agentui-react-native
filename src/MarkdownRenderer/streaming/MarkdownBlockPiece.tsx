@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useRef } from 'react';
+import { Text } from 'react-native';
 import type { Processor } from '../remarkBundle';
 import type { MarkdownRnComponentsBundle } from '../buildRnComponents';
 import { renderMarkdownBlock } from '../renderMarkdownBlock';
@@ -80,6 +81,13 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
 
     const stableSource = getStreamingStableMarkdownBlock(blockSource);
     const prev = lastParsedRef.current;
+
+    if (!stableSource.trim() && blockSource.trim()) {
+      if (prev?.node) return prev.node;
+      return wrap(
+        <Text style={t.typography.body}>{blockSource}</Text>,
+      );
+    }
 
     if (
       prev &&

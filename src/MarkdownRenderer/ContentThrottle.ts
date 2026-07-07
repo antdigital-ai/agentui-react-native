@@ -61,6 +61,14 @@ export class ContentThrottle {
     }
   }
 
+  /** Show full content immediately without animation (first paint / remount). */
+  syncImmediate(content: string): void {
+    this.cancelAllTicks();
+    this.fullContent = content;
+    this.displayedLength = content.length;
+    this.onFlush(content);
+  }
+
   push(content: string): void {
     if (content === this.fullContent) {
       if (this.displayedLength < content.length) this.ensureTicking();

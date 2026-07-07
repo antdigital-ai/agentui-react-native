@@ -121,7 +121,7 @@ const TableColumnContext = React.createContext<TableColumnContextValue | null>(
 );
 
 const defaultTableContext: TableColumnContextValue = {
-  layoutMode: 'fill',
+  layoutMode: 'scroll',
   layoutReady: false,
   widths: EMPTY_WIDTHS,
   report: noopReport,
@@ -204,15 +204,16 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     [],
   );
 
+  const columnsMeasured =
+    containerWidth > 0 && sumColumnWidths(widths) > 0;
+  const contentOverflows =
+    columnsMeasured && sumColumnWidths(widths) > containerWidth;
   const layoutMode: TableLayoutMode =
-    containerWidth > 0 && sumColumnWidths(widths) > containerWidth
-      ? 'scroll'
-      : 'fill';
-  const layoutReady = containerWidth > 0 && sumColumnWidths(widths) > 0;
+    !columnsMeasured || contentOverflows ? 'scroll' : 'fill';
 
   const contextValue = React.useMemo<TableColumnContextValue>(
-    () => ({ layoutMode, layoutReady, widths, report }),
-    [layoutMode, layoutReady, widths, report],
+    () => ({ layoutMode, layoutReady: columnsMeasured, widths, report }),
+    [layoutMode, columnsMeasured, widths, report],
   );
 
   const handleContainerLayout = React.useCallback((event: LayoutChangeEvent) => {
@@ -240,18 +241,15 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     >
       <ScrollView
         horizontal
-        scrollEnabled={layoutMode === 'scroll'}
+        scrollEnabled={contentOverflows}
         showsHorizontalScrollIndicator={Platform.OS === 'web'}
         style={{ width: '100%' }}
-        contentContainerStyle={{ minWidth: '100%' }}
+        contentContainerStyle={
+          layoutMode === 'fill' ? { minWidth: '100%' } : undefined
+        }
       >
         <TableColumnContext.Provider value={contextValue}>
-          <View
-            style={{
-              ...tableSectionStyle(layoutMode),
-              opacity: layoutReady ? 1 : 0,
-            }}
-          >
+          <View style={tableSectionStyle(layoutMode)}>
             {wrapViewChildren(children, body)}
           </View>
         </TableColumnContext.Provider>
@@ -904,7 +902,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell
-          layoutMode={layoutMode ?? 'fill'}
+          layoutMode={layoutMode ?? 'scroll'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >
@@ -920,7 +918,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell={false}
-          layoutMode={layoutMode ?? 'fill'}
+          layoutMode={layoutMode ?? 'scroll'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >

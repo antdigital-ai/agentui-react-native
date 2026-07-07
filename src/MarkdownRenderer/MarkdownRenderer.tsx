@@ -14,6 +14,8 @@ import type {
 } from './types';
 import { useContentThrottle } from './useContentThrottle';
 import { useMarkdownToReact } from './useStreamingMarkdownReact';
+import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
+import { useMarkdownThemeWithOverride } from '../theme/MarkdownThemeProvider';
 
 const MarkdownRendererInner = forwardRef<
   MarkdownRendererRef,
@@ -34,6 +36,7 @@ const MarkdownRendererInner = forwardRef<
 
   const sourceText = content || '';
   const throttleEnabled = streaming && throttleOptions?.enabled !== false;
+  const theme = useMarkdownThemeWithOverride(undefined);
 
   const displayedText = useContentThrottle(
     sourceText,
@@ -57,11 +60,16 @@ const MarkdownRendererInner = forwardRef<
 
   return (
     <View testID={testID} style={style} {...webClassName('agentui-markdown')}>
-      {typeof reactContent === 'string' || typeof reactContent === 'number' ? (
-        <Text>{String(reactContent)}</Text>
-      ) : (
-        reactContent
-      )}
+      <MarkdownErrorBoundary
+        content={sourceText}
+        bodyStyle={theme.typography.body}
+      >
+        {typeof reactContent === 'string' || typeof reactContent === 'number' ? (
+          <Text>{String(reactContent)}</Text>
+        ) : (
+          reactContent
+        )}
+      </MarkdownErrorBoundary>
     </View>
   );
 });

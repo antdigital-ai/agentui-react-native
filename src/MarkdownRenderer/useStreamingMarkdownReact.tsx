@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { Text } from 'react-native';
 import { createHastProcessor } from './processor';
 import { buildRnComponents } from './buildRnComponents';
 import { useMarkdownThemeWithOverride } from '../theme/MarkdownThemeProvider';
@@ -112,7 +113,12 @@ export function useStreamingMarkdownReact(
   );
 
   return useMemo(() => {
-    if (blocks.length === 0) return null;
+    if (blocks.length === 0) {
+      if (content.trim()) {
+        return <Text style={theme.typography.body}>{content}</Text>;
+      }
+      return null;
+    }
 
     const renderCount = Math.min(visibleCount, blocks.length);
     const elements: React.ReactNode[] = [];
@@ -144,6 +150,7 @@ export function useStreamingMarkdownReact(
     componentBundle,
     options?.streaming,
     theme,
+    content,
   ]);
 }
 

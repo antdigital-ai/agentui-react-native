@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ContentThrottle } from './ContentThrottle';
 import type { ContentThrottleOptions } from './types';
 
@@ -13,14 +13,12 @@ export function useContentThrottle(
   const flushOnComplete = options?.flushOnComplete;
   const backgroundInterval = options?.backgroundInterval;
   const backgroundBatchMultiplier = options?.backgroundBatchMultiplier;
-  const [displayed, setDisplayed] = useState(() =>
-    enabled && !isFinished ? '' : content,
-  );
+  const [displayed, setDisplayed] = useState(content);
   const engineRef = useRef<ContentThrottle | null>(null);
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled) {
       engineRef.current?.dispose();
       engineRef.current = null;
@@ -30,14 +28,15 @@ export function useContentThrottle(
 
     if (!engineRef.current) {
       engineRef.current = new ContentThrottle(setDisplayed, optionsRef.current);
+      engineRef.current.syncImmediate(content);
     } else {
       engineRef.current.setOptions(optionsRef.current);
+      engineRef.current.push(content);
     }
-    engineRef.current.push(content);
     if (isFinished) engineRef.current.complete();
   }, [content, enabled, isFinished]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled || !engineRef.current) return;
     engineRef.current.setOptions(optionsRef.current);
   }, [
@@ -49,7 +48,7 @@ export function useContentThrottle(
     backgroundBatchMultiplier,
   ]);
 
-  useEffect(
+  useLayoutEffect(
     () => () => {
       engineRef.current?.dispose();
       engineRef.current = null;
