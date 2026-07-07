@@ -97,6 +97,63 @@ const tableCellWebClass = (
   return `agentui-markdown-table-cell agentui-markdown-table-td agentui-markdown-table-${role}`;
 };
 
+type HastNode = {
+  tagName?: string;
+  children?: HastNode[];
+  value?: string;
+};
+
+const hastNodeText = (node: HastNode | undefined): string => {
+  if (!node) return '';
+  if (typeof node.value === 'string') return node.value;
+  if (!Array.isArray(node.children)) return '';
+  return node.children.map(hastNodeText).join('');
+};
+
+const hastRowHasVisibleCells = (row: HastNode | undefined): boolean => {
+  if (row?.tagName !== 'tr') return false;
+  return (row.children ?? []).some((cell) => {
+    if (cell.tagName !== 'td' && cell.tagName !== 'th') return false;
+    return hastNodeText(cell).trim().length > 0;
+  });
+};
+
+const tableAstHasVisibleBodyRows = (node: unknown): boolean => {
+  if (!node || typeof node !== 'object') return true;
+  const table = node as HastNode;
+  if (table.tagName !== 'table') return true;
+  let foundBodySection = false;
+  for (const section of table.children ?? []) {
+    if (section.tagName === 'tbody') {
+      foundBodySection = true;
+      if ((section.children ?? []).some(hastRowHasVisibleCells)) return true;
+    }
+    if (section.tagName === 'tr' && hastRowHasVisibleCells(section)) {
+      return true;
+    }
+  }
+  return foundBodySection ? false : true;
+};
+
+const reactNodeText = (node: React.ReactNode): string => {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(reactNodeText).join('');
+  if (React.isValidElement(node)) {
+    return reactNodeText(
+      (node as React.ReactElement<{ children?: React.ReactNode }>).props.children,
+    );
+  }
+  return '';
+};
+
+const tableRowHasVisibleCells = (cells: React.ReactNode[]): boolean =>
+  cells.some((cell) => {
+    if (!React.isValidElement(cell)) return reactNodeText(cell).trim().length > 0;
+    return reactNodeText(
+      (cell as React.ReactElement<{ children?: React.ReactNode }>).props.children,
+    ).trim().length > 0;
+  });
 
 type ReportColumnWidth = (columnIndex: number, width: number) => void;
 
@@ -121,7 +178,7 @@ const TableColumnContext = React.createContext<TableColumnContextValue | null>(
 );
 
 const defaultTableContext: TableColumnContextValue = {
-  layoutMode: 'scroll',
+  layoutMode: 'fill',
   layoutReady: false,
   widths: EMPTY_WIDTHS,
   report: noopReport,
@@ -151,6 +208,7 @@ type MarkdownTableProps = {
   theme: MarkdownTheme;
   body: TextStyle;
   children: React.ReactNode;
+  node?: unknown;
 };
 
 const tableSectionStyle = (layoutMode: TableLayoutMode): ViewStyle =>
@@ -162,7 +220,11 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
   theme,
   body,
   children,
+  node,
 }) => {
+  if (!tableAstHasVisibleBodyRows(node)) {
+    return null;
+  }
   const [containerWidth, setContainerWidth] = React.useState(0);
   const [widths, setWidths] = React.useState<number[]>(EMPTY_WIDTHS);
   const measuredRef = React.useRef<number[]>([]);
@@ -208,8 +270,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     containerWidth > 0 && sumColumnWidths(widths) > 0;
   const contentOverflows =
     columnsMeasured && sumColumnWidths(widths) > containerWidth;
-  const layoutMode: TableLayoutMode =
-    !columnsMeasured || contentOverflows ? 'scroll' : 'fill';
+  const layoutMode: TableLayoutMode = contentOverflows ? 'scroll' : 'fill';
 
   const contextValue = React.useMemo<TableColumnContextValue>(
     () => ({ layoutMode, layoutReady: columnsMeasured, widths, report }),
@@ -287,9 +348,11 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
 }) => {
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
   const horizontalPadding = theme.spacing.tableCellPadding * 2;
-  // Reserve one text line so empty cells keep rows at a consistent height.
+  const verticalPadding = theme.spacing.tableCellPadding * 2;
+  const hasContent = reactNodeText(children).trim().length > 0;
+  // Reserve one text line so empty cells in populated rows keep a consistent height.
   const lineHeight =
-    typeof cellTextStyle.lineHeight === 'number'
+    hasContent && typeof cellTextStyle.lineHeight === 'number'
       ? cellTextStyle.lineHeight
       : undefined;
 
@@ -319,13 +382,16 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
         ...tableCellPaddingStyle(theme),
         ...cellLayoutStyle,
         justifyContent: 'center',
+        ...(lineHeight != null
+          ? { minHeight: lineHeight + verticalPadding }
+          : undefined),
         backgroundColor: isHeaderCell
           ? theme.colors.tableHeaderBackground
           : undefined,
       }}
     >
       <View
-        style={{ alignSelf: 'flex-start', minHeight: lineHeight }}
+        style={{ alignSelf: 'flex-start', ...(lineHeight ? { minHeight: lineHeight } : undefined) }}
         onLayout={handleContentLayout}
       >
         {wrapViewChildren(children, cellTextStyle)}
@@ -349,6 +415,10 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
 }) => {
   const { layoutMode, widths, report } = useTableColumnWidths();
   const cells = React.Children.toArray(children);
+
+  if (!tableRowHasVisibleCells(cells)) {
+    return null;
+  }
 
   return (
     <View
@@ -869,23 +939,34 @@ export const buildRnComponents = ({
     },
 
     table: (props) => (
-      <MarkdownTable theme={theme} body={body}>
+      <MarkdownTable theme={theme} body={body} node={props.node}>
         {props.children}
       </MarkdownTable>
     ),
     thead: (props) => {
       const { layoutMode } = useTableColumnWidths();
       return (
-        <View style={tableSectionStyle(layoutMode)}>
+        <View testID="markdown-table-head" style={tableSectionStyle(layoutMode)}>
           {wrapViewChildren(props.children, body)}
         </View>
       );
     },
     tbody: (props) => {
       const { layoutMode } = useTableColumnWidths();
+      const rows = React.Children.toArray(props.children).filter((row) =>
+        React.isValidElement(row)
+          ? tableRowHasVisibleCells(
+              React.Children.toArray(
+                (row as React.ReactElement<{ children?: React.ReactNode }>).props
+                  .children,
+              ),
+            )
+          : false,
+      );
+      if (rows.length === 0) return null;
       return (
-        <View style={tableSectionStyle(layoutMode)}>
-          {wrapViewChildren(props.children, body)}
+        <View testID="markdown-table-body" style={tableSectionStyle(layoutMode)}>
+          {wrapViewChildren(rows, body)}
         </View>
       );
     },
@@ -902,7 +983,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell
-          layoutMode={layoutMode ?? 'scroll'}
+          layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >
@@ -918,7 +999,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell={false}
-          layoutMode={layoutMode ?? 'scroll'}
+          layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
         >

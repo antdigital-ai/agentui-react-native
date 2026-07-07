@@ -88,6 +88,31 @@ describe('MarkdownRenderer', () => {
     expect(getByText('在线')).toBeTruthy();
   });
 
+  it('hides placeholder tables with only empty body rows', () => {
+    const { queryByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'| 字段 | 数值 |\n| --- | --- |\n| | |\n| | |'}
+      />,
+    );
+    expect(queryByTestId('markdown-table')).toBeNull();
+  });
+
+  it('skips empty body rows but keeps populated rows', () => {
+    const { getByTestId, getByText, queryByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={
+          '| 字段 | 数值 |\n| --- | --- |\n| | |\n| 价格 | $1,770.31 |\n| | |'
+        }
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(getByText('价格')).toBeTruthy();
+    expect(getByText('$1,770.31')).toBeTruthy();
+    expect(queryByText('| | |')).toBeNull();
+  });
+
   it('renders unordered list item text', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,
