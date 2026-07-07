@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Text } from 'react-native';
+import React, { useMemo, useRef } from 'react';
+import { Text, View } from 'react-native';
 import { createHastProcessor } from './processor';
 import { buildRnComponents } from './buildRnComponents';
 import { useMarkdownThemeWithOverride } from '../theme/MarkdownThemeProvider';
@@ -13,18 +13,9 @@ import { MarkdownBlockPiece } from './streaming/MarkdownBlockPiece';
 import { shouldResetRevisionProgress } from './streaming/revisionPolicy';
 import { useProgressiveBlocks } from './streaming/useProgressiveBlocks';
 import { useShallowMemo } from './streaming/useShallowMemo';
+import { isPlainMarkdownText } from './plainText';
 
 const EMPTY_BLOCKS: string[] = [];
-
-interface RevisionState {
-  prevRevision: string | undefined;
-  generation: number;
-}
-
-const INITIAL_REVISION_STATE: RevisionState = {
-  prevRevision: undefined,
-  generation: 0,
-};
 
 export function useStreamingMarkdownReact(
   content: string,
@@ -56,36 +47,25 @@ export function useStreamingMarkdownReact(
     [theme, options?.linkConfig, options?.eleRender, stableComponents],
   );
 
-  const [revisionState, setRevisionState] = useState<RevisionState>(
-    INITIAL_REVISION_STATE,
-  );
+  const revisionTrackerRef = useRef<{ prev?: string; generation: number }>({
+    generation: 0,
+  });
 
-  let nextPrevRevision = revisionState.prevRevision;
-  let nextGeneration = revisionState.generation;
-
-  if (!content) {
-    nextPrevRevision = '';
-  } else {
-    if (
-      revisionState.prevRevision !== undefined &&
-      shouldResetRevisionProgress(revisionState.prevRevision, revisionSource)
-    ) {
-      nextGeneration = revisionState.generation + 1;
+  const generation = useMemo(() => {
+    const tracker = revisionTrackerRef.current;
+    if (!content) {
+      tracker.prev = '';
+      return tracker.generation;
     }
-    nextPrevRevision = revisionSource;
-  }
-
-  if (
-    nextPrevRevision !== revisionState.prevRevision ||
-    nextGeneration !== revisionState.generation
-  ) {
-    setRevisionState({
-      prevRevision: nextPrevRevision,
-      generation: nextGeneration,
-    });
-  }
-
-  const generation = nextGeneration;
+    if (
+      tracker.prev !== undefined &&
+      shouldResetRevisionProgress(tracker.prev, revisionSource)
+    ) {
+      tracker.generation += 1;
+    }
+    tracker.prev = revisionSource;
+    return tracker.generation;
+  }, [content, revisionSource]);
 
   const splitCacheRef = useRef<MarkdownBlocksSplitCache | undefined>(undefined);
   const splitGenerationRef = useRef(generation);
@@ -106,18 +86,28 @@ export function useStreamingMarkdownReact(
     }
   }, [content, generation]);
 
-  const visibleCount = useProgressiveBlocks(
-    blocks.length,
-    !!options?.streaming,
-    generation,
-  );
+  const visibleCount = useProgressiveBlocks(blocks.length);
 
   return useMemo(() => {
-    if (blocks.length === 0) {
-      if (content.trim()) {
-        return <Text style={theme.typography.body}>{content}</Text>;
-      }
+    if (!content.trim()) {
       return null;
+    }
+
+    if (isPlainMarkdownText(content)) {
+      return (
+        <Text
+          style={[
+            theme.typography.body,
+            { color: theme.colors.text },
+          ]}
+        >
+          {content}
+        </Text>
+      );
+    }
+
+    if (blocks.length === 0) {
+      return <Text style={theme.typography.body}>{content}</Text>;
     }
 
     const renderCount = Math.min(visibleCount, blocks.length);
@@ -141,7 +131,11 @@ export function useStreamingMarkdownReact(
       );
     }
 
-    return <>{elements}</>;
+    return (
+      <View collapsable={false} style={{ width: '100%', alignSelf: 'stretch' }}>
+        {elements}
+      </View>
+    );
   }, [
     blocks,
     generation,

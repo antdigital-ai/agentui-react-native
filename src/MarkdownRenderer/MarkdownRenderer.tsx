@@ -59,7 +59,12 @@ const MarkdownRendererInner = forwardRef<
   });
 
   return (
-    <View testID={testID} style={style} {...webClassName('agentui-markdown')}>
+    <View
+      testID={testID}
+      style={style}
+      collapsable={false}
+      {...webClassName('agentui-markdown')}
+    >
       <MarkdownErrorBoundary
         content={sourceText}
         bodyStyle={theme.typography.body}

@@ -113,6 +113,15 @@ describe('MarkdownRenderer', () => {
     expect(queryByText('| | |')).toBeNull();
   });
 
+  it('renders plain assistant text via Text fast path', () => {
+    const content =
+      'This is a portfolio/position analysis request — routing to the Position Analysis specialist.';
+    const { getByText } = wrap(
+      <MarkdownRenderer layoutDensity="compact" content={content} isFinished />,
+    );
+    expect(getByText(content)).toBeTruthy();
+  });
+
   it('renders unordered list item text', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer content={'- Bull point one\n- Bull point two'} />,
@@ -171,7 +180,7 @@ describe('MarkdownRenderer', () => {
     const ui = (gap: number) => (
       <MarkdownThemeProvider>
         <MarkdownRenderer
-          content="Hello"
+          content={'Hello\n\nWorld'}
           theme={{
             spacing: {
               paragraphGap: gap,
@@ -181,14 +190,16 @@ describe('MarkdownRenderer', () => {
         />
       </MarkdownThemeProvider>
     );
-    const { rerender, getByTestId } = render(ui(4));
-    expect(StyleSheet.flatten(getByTestId('markdown-paragraph').props.style).marginBottom).toBe(
-      4,
-    );
+    const { rerender, getAllByTestId } = render(ui(4));
+    expect(
+      StyleSheet.flatten(getAllByTestId('markdown-paragraph')[0].props.style)
+        .marginBottom,
+    ).toBe(4);
     rerender(ui(99));
-    expect(StyleSheet.flatten(getByTestId('markdown-paragraph').props.style).marginBottom).toBe(
-      99,
-    );
+    expect(
+      StyleSheet.flatten(getAllByTestId('markdown-paragraph')[0].props.style)
+        .marginBottom,
+    ).toBe(99);
   });
 
   it('renders red font tag in compact stat line', () => {
