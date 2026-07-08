@@ -35,6 +35,14 @@ export function MessageList({
   const lastId = lastMessage?.id ?? '';
   const scrollOnResize = autoScrollToBottom && lastMessage?.streaming === true;
 
+  /** Force FlatList to refresh rows when in-place message mutations reuse array refs. */
+  const listExtraData = messages
+    .map(
+      (m) =>
+        `${m.id}:${m.content.length}:${m.streaming ? 1 : 0}:${m.isFinished ? 1 : 0}`,
+    )
+    .join('|');
+
   const onContentSizeChange = useCallback(() => {
     if (scrollOnResize && messages.length > 0) {
       listRef.current?.scrollToEnd({ animated: false });
@@ -81,6 +89,7 @@ export function MessageList({
       ref={listRef}
       testID={testID}
       data={messages}
+      extraData={listExtraData}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       {...webClassName('agentui-message-list')}
@@ -93,7 +102,7 @@ export function MessageList({
       contentContainerStyle={listContentContainerStyle}
       keyboardShouldPersistTaps="handled"
       onContentSizeChange={onContentSizeChange}
-      removeClippedSubviews={Platform.OS === 'android'}
+      removeClippedSubviews={false}
       windowSize={7}
     />
   );

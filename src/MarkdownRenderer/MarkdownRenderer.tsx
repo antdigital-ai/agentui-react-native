@@ -44,12 +44,14 @@ const MarkdownRendererInner = forwardRef<
     throttleOptions,
     isFinished,
   );
+  const renderText =
+    streaming && throttleEnabled && !isFinished ? displayedText : sourceText;
 
   useImperativeHandle(ref, () => ({
     getDisplayedContent: () => displayedText,
   }));
 
-  const reactContent = useMarkdownToReact(displayedText, {
+  const reactContent = useMarkdownToReact(renderText, {
     remarkPlugins,
     linkConfig,
     streaming,
