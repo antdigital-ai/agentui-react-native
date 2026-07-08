@@ -14,6 +14,7 @@ import { shouldResetRevisionProgress } from './streaming/revisionPolicy';
 import { useProgressiveBlocks } from './streaming/useProgressiveBlocks';
 import { useShallowMemo } from './streaming/useShallowMemo';
 import { isPlainMarkdownText } from './plainText';
+import { normalizeChatMarkdown } from './normalizeChatMarkdown';
 
 const EMPTY_BLOCKS: string[] = [];
 
@@ -47,13 +48,20 @@ export function useStreamingMarkdownReact(
     [theme, options?.linkConfig, options?.eleRender, stableComponents],
   );
 
+  const streamTailActive = !!options?.streaming && !options?.isFinished;
+
+  const normalizedContent = useMemo(
+    () => normalizeChatMarkdown(content, { streaming: streamTailActive }),
+    [content, streamTailActive],
+  );
+
   const revisionTrackerRef = useRef<{ prev?: string; generation: number }>({
     generation: 0,
   });
 
   const generation = useMemo(() => {
     const tracker = revisionTrackerRef.current;
-    if (!content) {
+    if (!normalizedContent) {
       tracker.prev = '';
       return tracker.generation;
     }
@@ -65,35 +73,38 @@ export function useStreamingMarkdownReact(
     }
     tracker.prev = revisionSource;
     return tracker.generation;
-  }, [content, revisionSource]);
+  }, [normalizedContent, revisionSource]);
 
   const splitCacheRef = useRef<MarkdownBlocksSplitCache | undefined>(undefined);
   const splitGenerationRef = useRef(generation);
 
   const blocks = useMemo(() => {
-    if (!content) return EMPTY_BLOCKS;
+    if (!normalizedContent) return EMPTY_BLOCKS;
     if (splitGenerationRef.current !== generation) {
       splitGenerationRef.current = generation;
       splitCacheRef.current = undefined;
     }
     try {
-      const next = splitMarkdownBlocksWithCache(content, splitCacheRef.current);
+      const next = splitMarkdownBlocksWithCache(
+        normalizedContent,
+        splitCacheRef.current,
+      );
       splitCacheRef.current = next;
       return next.blocks.length > 0 ? next.blocks : EMPTY_BLOCKS;
     } catch {
       splitCacheRef.current = undefined;
       return EMPTY_BLOCKS;
     }
-  }, [content, generation]);
+  }, [normalizedContent, generation]);
 
   const visibleCount = useProgressiveBlocks(blocks.length);
 
   return useMemo(() => {
-    if (!content.trim()) {
+    if (!normalizedContent.trim()) {
       return null;
     }
 
-    if (isPlainMarkdownText(content)) {
+    if (isPlainMarkdownText(normalizedContent)) {
       return (
         <Text
           style={[
@@ -101,13 +112,13 @@ export function useStreamingMarkdownReact(
             { color: theme.colors.text },
           ]}
         >
-          {content}
+          {normalizedContent}
         </Text>
       );
     }
 
     if (blocks.length === 0) {
-      return <Text style={theme.typography.body}>{content}</Text>;
+      return <Text style={theme.typography.body}>{normalizedContent}</Text>;
     }
 
     const renderCount = Math.min(visibleCount, blocks.length);
@@ -125,7 +136,7 @@ export function useStreamingMarkdownReact(
           processor={processor}
           componentBundle={componentBundle}
           isFirstBlock={index === 0}
-          streaming={!!options?.streaming}
+          streaming={streamTailActive}
           theme={theme}
         />,
       );
@@ -142,9 +153,9 @@ export function useStreamingMarkdownReact(
     visibleCount,
     processor,
     componentBundle,
-    options?.streaming,
+    streamTailActive,
     theme,
-    content,
+    normalizedContent,
   ]);
 }
 

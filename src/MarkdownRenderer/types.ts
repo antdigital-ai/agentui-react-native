@@ -72,6 +72,8 @@ export interface UseMarkdownToReactOptions {
   };
   linkConfig?: MarkdownRendererProps['linkConfig'];
   streaming?: boolean;
+  /** When true, tail-block streaming guards (incomplete line holdback) are disabled. */
+  isFinished?: boolean;
   contentRevisionSource?: string;
   eleRender?: MarkdownRendererProps['eleRender'];
   theme?: MarkdownThemeOverride;

@@ -238,6 +238,43 @@ describe('MarkdownRenderer', () => {
     expect(getByText('Next')).toBeTruthy();
   });
 
+  it('renders final blockquote when stream ends with isFinished but no trailing newline', () => {
+    const content = 'Intro\n\n> 以上为信息与分析，投资决策请你自行判断。';
+    const { getByText } = wrap(
+      <MarkdownRenderer
+        streaming
+        isFinished
+        throttleOptions={{ enabled: false }}
+        content={content}
+      />,
+    );
+    expect(getByText(/以上为信息与分析/)).toBeTruthy();
+  });
+
+  it('renders portfolio tail sections when stream finishes with isFinished', () => {
+    const content = `你的组合当前总值约 **$179.66**。
+
+Data note: 测试网资产（Pharos_Testnet）已排除。
+
+## What this means
+
+- **集中度（HHI 0.375）**：说明文字。
+
+> 以上为信息与分析，投资决策请你自行判断。`;
+    const { getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        streaming
+        isFinished
+        throttleOptions={{ enabled: false }}
+        content={content}
+      />,
+    );
+    expect(getByText(/What this means/)).toBeTruthy();
+    expect(getByText(/Pharos_Testnet/)).toBeTruthy();
+    expect(getByText(/以上为信息与分析/)).toBeTruthy();
+  });
+
   it('renders inline html span and br without throwing', () => {
     const { getByText } = wrap(
       <MarkdownRenderer content={'Alpha<span>beta</span><br>gamma'} />,
@@ -261,5 +298,14 @@ describe('MarkdownRenderer', () => {
     const code = getByTestId('markdown-fenced-code');
     const style = StyleSheet.flatten(code.props.style);
     expect(style.whiteSpace).toBe('pre');
+  });
+
+  it('renders heading after closing fence glued on same line', () => {
+    const content = ['```tsx', 'const x = 1;', '```### 设计要点', '', '正文'].join(
+      '\n',
+    );
+    const { getByTestId } = wrap(<MarkdownRenderer content={content} />);
+    expect(getByTestId('markdown-code-block')).toBeTruthy();
+    expect(getByTestId('markdown-heading-3')).toBeTruthy();
   });
 });

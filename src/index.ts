@@ -7,6 +7,8 @@ export { markdownToReactSync } from './MarkdownRenderer/markdownToReactSync';
 export { useContentThrottle } from './MarkdownRenderer/useContentThrottle';
 export { createHastProcessor } from './MarkdownRenderer/processor';
 export { splitMarkdownBlocks } from './MarkdownRenderer/streaming/splitMarkdownBlocks';
+export { normalizeChatMarkdown } from './MarkdownRenderer/normalizeChatMarkdown';
+export type { NormalizeChatMarkdownOptions } from './MarkdownRenderer/normalizeChatMarkdown';
 export {
   parseAgentCardJson,
   normalizeAgentCardData,

@@ -5,6 +5,7 @@ import { buildRnComponents } from './buildRnComponents';
 import { renderMarkdownBlock } from './renderMarkdownBlock';
 import { defaultTheme, mergeTheme, type MarkdownThemeOverride } from '../theme/defaultTheme';
 import type { MarkdownRemarkPlugin, RendererBlockProps } from './types';
+import { normalizeChatMarkdown } from './normalizeChatMarkdown';
 
 export const markdownToReactSync = (
   content: string,
@@ -13,6 +14,7 @@ export const markdownToReactSync = (
   themePartial?: MarkdownThemeOverride,
 ): React.ReactNode => {
   if (!content) return null;
+  const normalized = normalizeChatMarkdown(content);
   const theme = mergeTheme(defaultTheme, themePartial);
   const processor = createHastProcessor(remarkPlugins);
   const bundle = buildRnComponents({
@@ -21,6 +23,6 @@ export const markdownToReactSync = (
   });
   return withBlockLayout(
     true,
-    renderMarkdownBlock(content, processor, bundle, theme),
+    renderMarkdownBlock(normalized, processor, bundle, theme),
   );
 };

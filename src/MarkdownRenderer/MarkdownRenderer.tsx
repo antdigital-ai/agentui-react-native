@@ -53,6 +53,7 @@ const MarkdownRendererInner = forwardRef<
     remarkPlugins,
     linkConfig,
     streaming,
+    isFinished,
     components,
     eleRender,
     contentRevisionSource: streaming ? sourceText : undefined,
