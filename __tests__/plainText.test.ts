@@ -1,6 +1,4 @@
 import { isPlainMarkdownText } from '../src/MarkdownRenderer/plainText';
-import { useProgressiveBlocks } from '../src/MarkdownRenderer/streaming/useProgressiveBlocks';
-import { renderHook } from '@testing-library/react-native';
 
 describe('isPlainMarkdownText', () => {
   it('returns true for plain English with em dash', () => {
@@ -25,12 +23,5 @@ describe('isPlainMarkdownText', () => {
     expect(isPlainMarkdownText('```agent-card\n{}\n```')).toBe(false);
     expect(isPlainMarkdownText('- list item')).toBe(false);
     expect(isPlainMarkdownText('[link](https://example.com)')).toBe(false);
-  });
-});
-
-describe('useProgressiveBlocks', () => {
-  it('always returns the full block count', () => {
-    expect(renderHook(() => useProgressiveBlocks(20)).result.current).toBe(20);
-    expect(renderHook(() => useProgressiveBlocks(1)).result.current).toBe(1);
   });
 });

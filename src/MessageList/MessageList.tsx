@@ -35,13 +35,25 @@ export function MessageList({
   const lastId = lastMessage?.id ?? '';
   const scrollOnResize = autoScrollToBottom && lastMessage?.streaming === true;
 
-  /** Force FlatList to refresh rows when in-place message mutations reuse array refs. */
-  const listExtraData = messages
-    .map(
-      (m) =>
-        `${m.id}:${m.content.length}:${m.streaming ? 1 : 0}:${m.isFinished ? 1 : 0}`,
-    )
-    .join('|');
+  /** Cheap fingerprint so FlatList refreshes on in-place message mutations. */
+  const listExtraData = useMemo(() => {
+    let contentLengthSum = 0;
+    for (let i = 0; i < messages.length; i += 1) {
+      contentLengthSum += messages[i].content.length;
+    }
+    const last = messages[messages.length - 1];
+    const lastPart = last
+      ? [
+          last.id,
+          last.content.length,
+          last.streaming ? 1 : 0,
+          last.isFinished ? 1 : 0,
+          last.thinking?.status ?? '',
+          last.thinking?.body?.length ?? 0,
+        ].join(':')
+      : '';
+    return `${messages.length}:${contentLengthSum}:${lastPart}`;
+  }, [messages]);
 
   const onContentSizeChange = useCallback(() => {
     if (scrollOnResize && messages.length > 0) {

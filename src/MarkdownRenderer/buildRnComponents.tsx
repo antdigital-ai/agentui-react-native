@@ -118,6 +118,19 @@ const hastRowHasVisibleCells = (row: HastNode | undefined): boolean => {
   });
 };
 
+const hastRowCellHasContent = (
+  row: HastNode | undefined,
+  columnIndex: number,
+): boolean => {
+  if (row?.tagName !== 'tr') return true;
+  const cells = (row.children ?? []).filter(
+    (cell) => cell.tagName === 'td' || cell.tagName === 'th',
+  );
+  const cell = cells[columnIndex];
+  if (!cell) return false;
+  return hastNodeText(cell).trim().length > 0;
+};
+
 const tableAstHasVisibleBodyRows = (node: unknown): boolean => {
   if (!node || typeof node !== 'object') return true;
   const table = node as HastNode;
@@ -134,26 +147,6 @@ const tableAstHasVisibleBodyRows = (node: unknown): boolean => {
   }
   return foundBodySection ? false : true;
 };
-
-const reactNodeText = (node: React.ReactNode): string => {
-  if (node == null || typeof node === 'boolean') return '';
-  if (typeof node === 'string' || typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map(reactNodeText).join('');
-  if (React.isValidElement(node)) {
-    return reactNodeText(
-      (node as React.ReactElement<{ children?: React.ReactNode }>).props.children,
-    );
-  }
-  return '';
-};
-
-const tableRowHasVisibleCells = (cells: React.ReactNode[]): boolean =>
-  cells.some((cell) => {
-    if (!React.isValidElement(cell)) return reactNodeText(cell).trim().length > 0;
-    return reactNodeText(
-      (cell as React.ReactElement<{ children?: React.ReactNode }>).props.children,
-    ).trim().length > 0;
-  });
 
 type ReportColumnWidth = (columnIndex: number, width: number) => void;
 
@@ -326,6 +319,7 @@ type MarkdownTableCellProps = {
   layoutMode: TableLayoutMode;
   columnWidth?: number;
   reportWidth: ReportColumnWidth;
+  hasContent: boolean;
   children: React.ReactNode;
 };
 
@@ -335,6 +329,7 @@ type TableCellInjectedProps = {
   layoutMode?: TableLayoutMode;
   columnWidth?: number;
   reportWidth?: ReportColumnWidth;
+  hasContent?: boolean;
 };
 
 const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
@@ -344,12 +339,12 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
   layoutMode,
   columnWidth,
   reportWidth,
+  hasContent,
   children,
 }) => {
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
   const horizontalPadding = theme.spacing.tableCellPadding * 2;
   const verticalPadding = theme.spacing.tableCellPadding * 2;
-  const hasContent = reactNodeText(children).trim().length > 0;
   // Reserve one text line so empty cells in populated rows keep a consistent height.
   const lineHeight =
     hasContent && typeof cellTextStyle.lineHeight === 'number'
@@ -405,20 +400,19 @@ const MarkdownTableCell = React.memo(MarkdownTableCellBase);
 type MarkdownTableRowProps = {
   theme: MarkdownTheme;
   body: TextStyle;
+  rowNode?: unknown;
   children: React.ReactNode;
 };
 
 const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
   theme,
   body,
+  rowNode,
   children,
 }) => {
   const { layoutMode, widths, report } = useTableColumnWidths();
   const cells = React.Children.toArray(children);
-
-  if (!tableRowHasVisibleCells(cells)) {
-    return null;
-  }
+  const astRow = rowNode as HastNode | undefined;
 
   return (
     <View
@@ -438,6 +432,7 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
                 layoutMode,
                 columnWidth: widths[index],
                 reportWidth: report,
+                hasContent: hastRowCellHasContent(astRow, index),
               },
             )
           : wrapViewChildren(cell, body),
@@ -953,30 +948,24 @@ export const buildRnComponents = ({
     },
     tbody: (props) => {
       const { layoutMode } = useTableColumnWidths();
-      const rows = React.Children.toArray(props.children).filter((row) =>
-        React.isValidElement(row)
-          ? tableRowHasVisibleCells(
-              React.Children.toArray(
-                (row as React.ReactElement<{ children?: React.ReactNode }>).props
-                  .children,
-              ),
-            )
-          : false,
-      );
-      if (rows.length === 0) return null;
       return (
         <View testID="markdown-table-body" style={tableSectionStyle(layoutMode)}>
-          {wrapViewChildren(rows, body)}
+          {wrapViewChildren(props.children, body)}
         </View>
       );
     },
-    tr: (props) => (
-      <MarkdownTableRow theme={theme} body={body}>
-        {props.children}
-      </MarkdownTableRow>
-    ),
+    tr: (props) => {
+      if (!hastRowHasVisibleCells(props.node as HastNode)) {
+        return null;
+      }
+      return (
+        <MarkdownTableRow theme={theme} body={body} rowNode={props.node}>
+          {props.children}
+        </MarkdownTableRow>
+      );
+    },
     th: (props) => {
-      const { columnIndex, layoutMode, columnWidth, reportWidth } =
+      const { columnIndex, layoutMode, columnWidth, reportWidth, hasContent } =
         props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
@@ -986,13 +975,14 @@ export const buildRnComponents = ({
           layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
+          hasContent={hasContent ?? true}
         >
           {props.children}
         </MarkdownTableCell>
       );
     },
     td: (props) => {
-      const { columnIndex, layoutMode, columnWidth, reportWidth } =
+      const { columnIndex, layoutMode, columnWidth, reportWidth, hasContent } =
         props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
@@ -1002,6 +992,7 @@ export const buildRnComponents = ({
           layoutMode={layoutMode ?? 'fill'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
+          hasContent={hasContent ?? true}
         >
           {props.children}
         </MarkdownTableCell>

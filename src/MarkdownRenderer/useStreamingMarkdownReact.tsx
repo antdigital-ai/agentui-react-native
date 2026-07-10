@@ -14,7 +14,10 @@ import { shouldResetRevisionProgress } from './streaming/revisionPolicy';
 import { useProgressiveBlocks } from './streaming/useProgressiveBlocks';
 import { useShallowMemo } from './streaming/useShallowMemo';
 import { isPlainMarkdownText } from './plainText';
-import { normalizeChatMarkdown } from './normalizeChatMarkdown';
+import {
+  normalizeChatMarkdown,
+  normalizeStreamingMarkdownLight,
+} from './normalizeChatMarkdown';
 
 const EMPTY_BLOCKS: string[] = [];
 
@@ -50,10 +53,13 @@ export function useStreamingMarkdownReact(
 
   const streamTailActive = !!options?.streaming && !options?.isFinished;
 
-  const normalizedContent = useMemo(
-    () => normalizeChatMarkdown(content, { streaming: streamTailActive }),
-    [content, streamTailActive],
-  );
+  const normalizedContent = useMemo(() => {
+    if (!content) return content;
+    if (streamTailActive) {
+      return normalizeStreamingMarkdownLight(content);
+    }
+    return normalizeChatMarkdown(content, { streaming: false });
+  }, [content, streamTailActive]);
 
   const revisionTrackerRef = useRef<{ prev?: string; generation: number }>({
     generation: 0,
@@ -97,7 +103,11 @@ export function useStreamingMarkdownReact(
     }
   }, [normalizedContent, generation]);
 
-  const visibleCount = useProgressiveBlocks(blocks.length);
+  const visibleCount = useProgressiveBlocks(
+    blocks.length,
+    streamTailActive,
+    generation,
+  );
 
   return useMemo(() => {
     if (!normalizedContent.trim()) {

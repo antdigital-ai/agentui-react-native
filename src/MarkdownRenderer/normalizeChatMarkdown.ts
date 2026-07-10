@@ -504,6 +504,54 @@ function ensureBlankLinesAroundFences(text: string): string {
   return result.join('\n');
 }
 
+function repairSpuriousFenceLine(line: string): string {
+  const match = line.match(FENCE_LINE_PATTERN);
+  if (!match) {
+    return line;
+  }
+  const after = match[2].trim();
+  if (/^-+$/.test(after)) {
+    return '---';
+  }
+  return line;
+}
+
+/** Single-pass line repairs used while SSE is still in flight. */
+function repairStreamingLine(line: string, ctx: MarkdownLineContext): string {
+  if (ctx.inFenced) {
+    return line;
+  }
+  let result = repairSpuriousFenceLine(line);
+  result = repairListLineOnLine(result);
+  result = splitConcatenatedTableRowsOnLine(result);
+  result = splitGluedTableRow(result);
+  return result;
+}
+
+/**
+ * Lightweight normalize for active streaming tails.
+ * Merges list/table/fence line repairs into one scan; defers heavy global
+ * repairs (glued headings, fence closing, etc.) until the stream finishes.
+ */
+export function normalizeStreamingMarkdownLight(content: string): string {
+  if (!content) {
+    return content;
+  }
+
+  let text = stripFinalMarkerTail(content);
+  text = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
+  text = repairOpeningFenceGluedToPrecedingText(text);
+  text = mapMarkdownLinesOutsideFences(text, repairStreamingLine);
+  text = repairHeadingGluedToPrecedingText(text);
+  text = ensureBlankLineBeforeHeadings(text);
+  text = repairHeadingHashSpacing(text);
+  text = repairGluedTableRowsGlobal(text);
+  text = text.replace(/^(#{1,6}\s+[^\n|]+?)(\|)/gm, '$1\n\n$2');
+  text = ensureBlankLineBeforeTables(text);
+  text = ensureBlankLinesAroundFences(text);
+  return repairUnclosedFencedCodeBlocks(text, true);
+}
+
 export interface NormalizeChatMarkdownOptions {
   /** Apply streaming-safe repairs (unclosed fences, etc.). */
   streaming?: boolean;
@@ -521,20 +569,11 @@ export function normalizeChatMarkdown(
     return content;
   }
 
-  let text = stripFinalMarkerTail(content);
-
   if (options.streaming) {
-    text = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
-    text = repairSpuriousFenceLines(text);
-    text = repairOpeningFenceGluedToPrecedingText(text);
-    text = repairListMarkdown(text);
-    text = repairHeadingGluedToPrecedingText(text);
-    text = ensureBlankLineBeforeHeadings(text);
-    text = repairHeadingHashSpacing(text);
-    text = normalizeTableMarkdown(text);
-    text = ensureBlankLinesAroundFences(text);
-    return repairUnclosedFencedCodeBlocks(text, true);
+    return normalizeStreamingMarkdownLight(content);
   }
+
+  let text = stripFinalMarkerTail(content);
 
   text = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
   text = repairSpuriousFenceLines(text);

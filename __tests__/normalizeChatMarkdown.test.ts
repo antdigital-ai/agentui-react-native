@@ -1,4 +1,7 @@
-import { normalizeChatMarkdown } from '../src/MarkdownRenderer/normalizeChatMarkdown';
+import {
+  normalizeChatMarkdown,
+  normalizeStreamingMarkdownLight,
+} from '../src/MarkdownRenderer/normalizeChatMarkdown';
 
 describe('normalizeChatMarkdown', () => {
   it('inserts blank line before opening fence glued to heading text', () => {
@@ -79,5 +82,20 @@ describe('normalizeChatMarkdown', () => {
 
   it('repairs unordered list marker spacing', () => {
     expect(normalizeChatMarkdown('-A. Web 前端应用')).toBe('- A. Web 前端应用');
+  });
+
+  it('streaming light path matches streaming normalize output', () => {
+    const samples = [
+      'intro\n```tsx\ncode',
+      '-A. Web 前端应用',
+      'intro paragraph\n| a | b |\n|---|---|\n| 1 | 2 |',
+      '|方法 |路径 |说明 ||------|------|------|',
+      '分层如下：## 客户端入口层',
+    ];
+    for (const sample of samples) {
+      expect(normalizeStreamingMarkdownLight(sample)).toBe(
+        normalizeChatMarkdown(sample, { streaming: true }),
+      );
+    }
   });
 });
