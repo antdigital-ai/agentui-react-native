@@ -84,6 +84,84 @@ describe('normalizeChatMarkdown', () => {
     expect(normalizeChatMarkdown('-A. Web 前端应用')).toBe('- A. Web 前端应用');
   });
 
+  it('preserves table with `#` ordinal column header', () => {
+    const input = [
+      '## 六、关键待确认项（四方需在评审定稿）',
+      '',
+      '| # | 问题 | 各方倾向 |',
+      '|---|------|---------|',
+      '| 1 | 锁定期内输入**正确密码**是否放行 | 测试/安全：锁定优先拒绝 |',
+    ].join('\n');
+    const normalized = normalizeChatMarkdown(input);
+    expect(normalized).toContain('| # | 问题 | 各方倾向 |');
+  });
+
+  it('preserves table with `#` ordinal column header while streaming', () => {
+    const input = [
+      '| # | 问题 | 各方倾向 |',
+      '|---|------|---------|',
+      '| 1 | 锁定期内',
+    ].join('\n');
+    expect(normalizeChatMarkdown(input, { streaming: true })).toContain(
+      '| # | 问题 | 各方倾向 |',
+    );
+  });
+
+  it('preserves partially streamed table header cell containing `#`', () => {
+    const streamingChunk = '审定稿）\n\n| # | 问题 | 各';
+    expect(normalizeChatMarkdown(streamingChunk, { streaming: true })).toContain(
+      '| # | 问题 | 各',
+    );
+  });
+
+  it('repairs table cell bold marker closed in a later cell', () => {
+    const input = [
+      '| 角色 | 核心目标 |',
+      '|---|---|',
+      '| **安全 | 防暴力破解、防撞库/凭证填充、防分布式暴力破解；保证锁定机制本身不被武器化**；全链路可审计、可告警。 |',
+    ].join('\n');
+    const normalized = normalizeChatMarkdown(input);
+    expect(normalized).toContain(
+      '| <strong>安全</strong> | 防暴力破解、防撞库/凭证填充、防分布式暴力破解；保证锁定机制本身不被武器化；全链路可审计、可告警。 |',
+    );
+    expect(normalized).not.toContain('武器化**');
+    expect(normalized).not.toContain('| **安全 |');
+  });
+
+  it('separates heading glued to table header row', () => {
+    const input =
+      '###验证结果| 检查项 |结果 |\n|---|---|\n| 删除 3 个 Controller | ✅ |';
+    const normalized = normalizeChatMarkdown(input);
+    expect(normalized).toContain('### 验证结果\n\n| 检查项 |结果 |');
+  });
+
+  it('inserts missing hash spacing for mid-line headings', () => {
+    expect(normalizeChatMarkdown('分层如下：##客户端入口层')).toBe(
+      '分层如下：\n\n## 客户端入口层',
+    );
+    expect(normalizeChatMarkdown('###4 技术栈偏好')).toBe('### 4 技术栈偏好');
+  });
+
+  it('pre-converts special-char bold spans to HTML strong', () => {
+    expect(normalizeChatMarkdown('达到**57%**增长')).toContain(
+      '<strong>57%</strong>',
+    );
+    expect(normalizeChatMarkdown('Revenue is **$9.698M** this quarter.')).toContain(
+      '<strong>$9.698M</strong>',
+    );
+  });
+
+  it('keeps list repairs while streaming', () => {
+    expect(normalizeChatMarkdown('-A. Web 前端应用', { streaming: true })).toBe(
+      '- A. Web 前端应用',
+    );
+  });
+
+  it('does not strip complete inline bold while streaming', () => {
+    expect(normalizeStreamingMarkdownLight('Line **bold**')).toBe('Line **bold**');
+    expect(normalizeStreamingMarkdownLight('Line **bold')).toBe('Line **bold');
+  });
+
   it('streaming light path matches streaming normalize output', () => {
     const samples = [
       'intro\n```tsx\ncode',

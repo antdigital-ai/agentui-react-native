@@ -106,6 +106,54 @@ function splitGluedTableRow(line: string): string {
   return `${prefix.trimEnd()}\n\n${tablePart.trimStart()}`;
 }
 
+function countStrongMarkers(text: string): number {
+  return text.match(/\*\*/g)?.length ?? 0;
+}
+
+function appendClosingStrongMarker(cell: string): string {
+  return cell.replace(/(\S)(\s*)$/, '$1**$2');
+}
+
+function removeLastStrongMarker(cell: string): string {
+  const markerIndex = cell.lastIndexOf('**');
+  if (markerIndex === -1) {
+    return cell;
+  }
+  return `${cell.slice(0, markerIndex)}${cell.slice(markerIndex + 2)}`;
+}
+
+/** Move closing `**` from a later cell when bold spans table cells. */
+function repairDanglingStrongMarkersInTableRow(line: string): string {
+  if (!isTableRow(line) || TABLE_SEPARATOR_PATTERN.test(line) || !line.includes('**')) {
+    return line;
+  }
+
+  const cells = line.split('|');
+  if (cells.length < 4) {
+    return line;
+  }
+
+  for (let cellIndex = 1; cellIndex < cells.length - 1; cellIndex++) {
+    const cell = cells[cellIndex];
+    const trimmedCell = cell.trim();
+    if (!trimmedCell.startsWith('**') || countStrongMarkers(trimmedCell) % 2 === 0) {
+      continue;
+    }
+
+    for (let nextCellIndex = cellIndex + 1; nextCellIndex < cells.length - 1; nextCellIndex++) {
+      if (countStrongMarkers(cells[nextCellIndex]) % 2 === 0) {
+        continue;
+      }
+
+      cells[cellIndex] = appendClosingStrongMarker(cell);
+      cells[nextCellIndex] = removeLastStrongMarker(cells[nextCellIndex]);
+      return cells.join('|');
+    }
+  }
+
+  return line;
+}
+
 function ensureBlankLineBeforeTables(text: string): string {
   const lines = text.split('\n');
   const result: string[] = [];
@@ -137,6 +185,7 @@ function normalizeTableMarkdown(text: string): string {
   result = repairGluedTableRowsGlobal(result);
   result = result.split('\n').map(splitConcatenatedTableRowsOnLine).join('\n');
   result = result.split('\n').map(splitGluedTableRow).join('\n');
+  result = result.split('\n').map(repairDanglingStrongMarkersInTableRow).join('\n');
   result = repairHeadingHashSpacing(result);
   result = result.replace(/^(#{1,6}\s+[^\n|]+?)(\|)/gm, '$1\n\n$2');
   result = ensureBlankLineBeforeTables(result);
@@ -242,12 +291,17 @@ function repairHeadingHashSpacing(text: string): string {
 const GLUED_HEADING_CJK_BEFORE = '[\\u4e00-\\u9fff：，。；！？）】》、]';
 
 function repairHeadingGluedToPrecedingText(text: string): string {
-  let result = text.replace(/([^\n#|`])(#{1,6})(?=\s)/g, '$1\n\n$2');
-  result = result.replace(
-    new RegExp(`(${GLUED_HEADING_CJK_BEFORE})(#{1,6})`, 'g'),
-    '$1\n\n$2',
-  );
-  return result;
+  return text.split('\n').map((line) => {
+    if (line.trimStart().startsWith('|') || isTableRow(line)) {
+      return line;
+    }
+    let result = line.replace(/([^\n#|`])(#{1,6})(?=\s)/g, '$1\n\n$2');
+    result = result.replace(
+      new RegExp(`(${GLUED_HEADING_CJK_BEFORE})(#{1,6})`, 'g'),
+      '$1\n\n$2',
+    );
+    return result;
+  }).join('\n');
 }
 
 function ensureBlankLineBeforeHeadings(text: string): string {
@@ -383,8 +437,12 @@ function repairBoldMarkerInternalSpacingOnLine(line: string): string {
   return mapSegmentsOutsideInlineCode(line, repairBoldMarkerInternalSpacingSegment);
 }
 
+/**
+ * Pre-convert bold spans that remark-gfm often misses (special chars, CJK).
+ * Requires at least one non-plain-letter trigger so `**bold**` stays markdown.
+ */
 const STRONG_WITH_SPECIAL_CHARS_PATTERN =
-  /\*\*([^*\n]*[$%#@&+\-=\d.，。、；：！？""''（）【】《》\u4e00-\u9fff]+[^*\n]*?)\*\*/g;
+  /\*\*([^*\n]*?(?:[$%#@&+\-=\d.，。、；：！？""''（）【】《》]|[\u4e00-\u9fff])[^*\n]*?)\*\*/g;
 
 function repairStrongWithSpecialCharsSegment(text: string): string {
   return text.replace(STRONG_WITH_SPECIAL_CHARS_PATTERN, '<strong>$1</strong>');
@@ -436,7 +494,8 @@ function stripTrailingHorizontalRuleOnListLine(line: string): string {
 }
 
 function repairListLineOnLine(line: string): string {
-  let result = normalizeUnicodeBulletMarkerOnLine(line);
+  let result = repairDanglingStrongMarkersInTableRow(line);
+  result = normalizeUnicodeBulletMarkerOnLine(result);
   result = repairUnorderedListMarkerSpacingOnLine(result);
   result = repairOrderedListMarkerSpacingOnLine(result);
   result = repairEmojiSectionHeadingSpacingOnLine(result);
@@ -504,52 +563,29 @@ function ensureBlankLinesAroundFences(text: string): string {
   return result.join('\n');
 }
 
-function repairSpuriousFenceLine(line: string): string {
-  const match = line.match(FENCE_LINE_PATTERN);
-  if (!match) {
-    return line;
-  }
-  const after = match[2].trim();
-  if (/^-+$/.test(after)) {
-    return '---';
-  }
-  return line;
-}
-
-/** Single-pass line repairs used while SSE is still in flight. */
-function repairStreamingLine(line: string, ctx: MarkdownLineContext): string {
-  if (ctx.inFenced) {
-    return line;
-  }
-  let result = repairSpuriousFenceLine(line);
-  result = repairListLineOnLine(result);
-  result = splitConcatenatedTableRowsOnLine(result);
-  result = splitGluedTableRow(result);
-  return result;
+/** Streaming-safe repairs; keeps fences open until the stream finishes. */
+function normalizeChatMarkdownStreaming(text: string): string {
+  let result = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
+  result = repairSpuriousFenceLines(result);
+  result = repairOpeningFenceGluedToPrecedingText(result);
+  result = repairListMarkdown(result);
+  result = repairHeadingGluedToPrecedingText(result);
+  result = ensureBlankLineBeforeHeadings(result);
+  result = repairHeadingHashSpacing(result);
+  result = normalizeTableMarkdown(result);
+  result = ensureBlankLinesAroundFences(result);
+  return repairUnclosedFencedCodeBlocks(result, true);
 }
 
 /**
  * Lightweight normalize for active streaming tails.
- * Merges list/table/fence line repairs into one scan; defers heavy global
- * repairs (glued headings, fence closing, etc.) until the stream finishes.
+ * Alias for the streaming branch of {@link normalizeChatMarkdown}.
  */
 export function normalizeStreamingMarkdownLight(content: string): string {
   if (!content) {
     return content;
   }
-
-  let text = stripFinalMarkerTail(content);
-  text = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
-  text = repairOpeningFenceGluedToPrecedingText(text);
-  text = mapMarkdownLinesOutsideFences(text, repairStreamingLine);
-  text = repairHeadingGluedToPrecedingText(text);
-  text = ensureBlankLineBeforeHeadings(text);
-  text = repairHeadingHashSpacing(text);
-  text = repairGluedTableRowsGlobal(text);
-  text = text.replace(/^(#{1,6}\s+[^\n|]+?)(\|)/gm, '$1\n\n$2');
-  text = ensureBlankLineBeforeTables(text);
-  text = ensureBlankLinesAroundFences(text);
-  return repairUnclosedFencedCodeBlocks(text, true);
+  return normalizeChatMarkdownStreaming(stripFinalMarkerTail(content));
 }
 
 export interface NormalizeChatMarkdownOptions {
@@ -569,11 +605,11 @@ export function normalizeChatMarkdown(
     return content;
   }
 
-  if (options.streaming) {
-    return normalizeStreamingMarkdownLight(content);
-  }
-
   let text = stripFinalMarkerTail(content);
+
+  if (options.streaming) {
+    return normalizeChatMarkdownStreaming(text);
+  }
 
   text = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
   text = repairSpuriousFenceLines(text);
