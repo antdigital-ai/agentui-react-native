@@ -111,5 +111,5 @@ export function getStreamingStableMarkdownBlock(source: string): string {
     else stable = source.slice(0, lastNewline + 1);
   }
 
-  return trimIncompleteBoldMarkup(trimIncompleteFontMarkup(stable));
+  return trimIncompleteFontMarkup(stable);
 }

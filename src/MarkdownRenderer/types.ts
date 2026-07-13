@@ -1,5 +1,7 @@
 import type React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
+import type { NormalizeChatMarkdownMode } from './normalizeChatMarkdown';
+import type { ParseIncompleteMarkdownOptions } from './parseIncompleteMarkdown';
 import type { Plugin } from './remarkBundle';
 import type { MarkdownThemeOverride } from '../theme/defaultTheme';
 import type { LayoutDensity } from '../theme/layout';
@@ -57,6 +59,10 @@ export interface MarkdownRendererProps {
   theme?: MarkdownThemeOverride;
   /** `auto`: phone native + web viewport under 768px use compact markdown. */
   layoutDensity?: LayoutDensity;
+  /** Which normalize pipeline to run before rendering. */
+  normalizeMode?: NormalizeChatMarkdownMode | 'thinking';
+  /** Streamdown-style remend options for the streaming tail block. */
+  parseIncompleteMarkdown?: ParseIncompleteMarkdownOptions;
   testID?: string;
 }
 
@@ -77,4 +83,6 @@ export interface UseMarkdownToReactOptions {
   contentRevisionSource?: string;
   eleRender?: MarkdownRendererProps['eleRender'];
   theme?: MarkdownThemeOverride;
+  normalizeMode?: NormalizeChatMarkdownMode | 'thinking';
+  parseIncompleteMarkdown?: ParseIncompleteMarkdownOptions;
 }

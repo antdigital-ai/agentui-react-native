@@ -1,3 +1,12 @@
+import { stripLeakedModelToolMarkup } from './stripLeakedModelToolMarkup';
+import { preprocessMaiInlineSyntax } from './preprocessMaiInlineSyntax';
+import {
+  isKeepaliveProgressLine,
+  repairGluedKeepaliveProgressLines,
+  toMarkdownHardBreakKeepaliveLines,
+} from './keepaliveProgress';
+import { repairStreamingEnglishGlue } from './streamingTextDelta';
+
 const TABLE_ROW_PATTERN = /^\s*\|.+\|\s*$/;
 const TABLE_SEPARATOR_PATTERN = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/;
 const HEADING_PATTERN = /^#{1,6}\s+/;
@@ -199,6 +208,50 @@ function stripFinalMarkerTail(content: string): string {
   }
 
   return content.slice(0, markerIndex).trimEnd();
+}
+
+/**
+ * Tool/page-read payloads sometimes reach chat as JSON-escaped prose: literal `\n`
+ * between table rows instead of real newlines. Markdown parsers then show `\n`
+ * on screen and never recognize GFM tables.
+ */
+function looksLikeJsonEscapedMarkdown(text: string): boolean {
+  if (!text.includes('\\n')) {
+    return false;
+  }
+
+  const literalNewlineCount = (text.match(/\\n/g) ?? []).length;
+  if (literalNewlineCount === 0) {
+    return false;
+  }
+
+  // Line-numbered read output: "...| 中 |\n35: | 无 id 格式校验 | ..."
+  if (/\\n\d+:\s/.test(text)) {
+    return true;
+  }
+
+  // GFM table rows glued with literal `\n`
+  if (/\|\\n\|/.test(text) || /\\n\|[-:]{3,}/.test(text)) {
+    return true;
+  }
+
+  // Headings or list items after literal `\n`
+  if (/\\n#{1,6}\s/.test(text) || /\\n[-*]\s/.test(text)) {
+    return true;
+  }
+
+  return literalNewlineCount >= 2 && text.includes('|');
+}
+
+function repairLiteralJsonEscapes(text: string): string {
+  if (!looksLikeJsonEscapedMarkdown(text)) {
+    return text;
+  }
+
+  return text
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\r/g, '\r');
 }
 
 function tailLooksLikeMarkdownBlock(content: string): boolean {
@@ -563,6 +616,10 @@ function ensureBlankLinesAroundFences(text: string): string {
   return result.join('\n');
 }
 
+function finalizeAssistantMarkdown(text: string): string {
+  return preprocessMaiInlineSyntax(text);
+}
+
 /** Streaming-safe repairs; keeps fences open until the stream finishes. */
 function normalizeChatMarkdownStreaming(text: string): string {
   let result = text.replace(/(---[ \t]*)(#{1,6})(?![#])/g, '$1\n\n$2');
@@ -574,23 +631,49 @@ function normalizeChatMarkdownStreaming(text: string): string {
   result = repairHeadingHashSpacing(result);
   result = normalizeTableMarkdown(result);
   result = ensureBlankLinesAroundFences(result);
-  return repairUnclosedFencedCodeBlocks(result, true);
+  return finalizeAssistantMarkdown(repairUnclosedFencedCodeBlocks(result, true));
+}
+
+export type NormalizeChatMarkdownMode = 'assistant' | 'user' | 'minimal';
+
+export interface NormalizeChatMarkdownOptions {
+  /** Apply streaming-safe repairs (unclosed fences, etc.). */
+  streaming?: boolean;
+  /** `user` / `minimal` skip LLM-oriented list/bold/heading/table repairs. */
+  mode?: NormalizeChatMarkdownMode;
+}
+
+function isMinimalNormalizeMode(options: NormalizeChatMarkdownOptions): boolean {
+  const mode = options.mode ?? 'assistant';
+  return mode === 'minimal' || mode === 'user';
+}
+
+function normalizeMinimalChatMarkdown(content: string, options: NormalizeChatMarkdownOptions): string {
+  let text = stripLeakedModelToolMarkup(stripFinalMarkerTail(content));
+  text = ensureBlankLinesAroundFences(text);
+  return repairUnclosedFencedCodeBlocks(text, options.streaming ?? false);
+}
+
+/** User-authored chat markdown: preserve syntax, only safe fence repairs. */
+export function normalizeUserMarkdown(
+  content: string,
+  options: Omit<NormalizeChatMarkdownOptions, 'mode'> = {},
+): string {
+  return normalizeChatMarkdown(content, { ...options, mode: 'user' });
 }
 
 /**
  * Lightweight normalize for active streaming tails.
  * Alias for the streaming branch of {@link normalizeChatMarkdown}.
  */
-export function normalizeStreamingMarkdownLight(content: string): string {
+export function normalizeStreamingMarkdownLight(
+  content: string,
+  options: Omit<NormalizeChatMarkdownOptions, 'streaming'> = {},
+): string {
   if (!content) {
     return content;
   }
-  return normalizeChatMarkdownStreaming(stripFinalMarkerTail(content));
-}
-
-export interface NormalizeChatMarkdownOptions {
-  /** Apply streaming-safe repairs (unclosed fences, etc.). */
-  streaming?: boolean;
+  return normalizeChatMarkdown(content, { ...options, streaming: true });
 }
 
 /**
@@ -605,7 +688,11 @@ export function normalizeChatMarkdown(
     return content;
   }
 
-  let text = stripFinalMarkerTail(content);
+  if (isMinimalNormalizeMode(options)) {
+    return normalizeMinimalChatMarkdown(content, options);
+  }
+
+  let text = stripLeakedModelToolMarkup(repairLiteralJsonEscapes(stripFinalMarkerTail(content)));
 
   if (options.streaming) {
     return normalizeChatMarkdownStreaming(text);
@@ -624,5 +711,35 @@ export function normalizeChatMarkdown(
   text = normalizeTableMarkdown(text);
   text = ensureBlankLinesAroundFences(text);
 
-  return repairUnclosedFencedCodeBlocks(text, false);
+  return finalizeAssistantMarkdown(repairUnclosedFencedCodeBlocks(text, false));
+}
+
+function looksLikeMarkdownTable(text: string): boolean {
+  return /^\s*\|[^\n]+\|\s*$/m.test(text);
+}
+
+/**
+ * Normalize Thought / keepalive progress text for markdown surfaces.
+ */
+export function normalizeThinkingMarkdown(
+  content: string,
+  options: NormalizeChatMarkdownOptions = {},
+): string {
+  if (!content) {
+    return content;
+  }
+
+  let text = repairStreamingEnglishGlue(repairGluedKeepaliveProgressLines(content));
+  const lines = text.split('\n').map((line) => line.trimEnd()).filter((line) => line.length > 0);
+  const isKeepaliveBlock = lines.length > 0 && lines.every(isKeepaliveProgressLine);
+
+  if (isKeepaliveBlock) {
+    return toMarkdownHardBreakKeepaliveLines(lines);
+  }
+
+  if (!options.streaming && text.includes('\n') && !looksLikeMarkdownTable(text)) {
+    text = text.replace(/\n/g, '  \n');
+  }
+
+  return normalizeChatMarkdown(text, options);
 }

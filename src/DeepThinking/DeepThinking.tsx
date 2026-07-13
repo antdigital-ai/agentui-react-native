@@ -143,7 +143,9 @@ export const DeepThinking = memo(function DeepThinking({
           <MarkdownRenderer
             content={body!}
             layoutDensity={layoutDensity}
+            streaming={status === 'thinking'}
             isFinished={status !== 'thinking'}
+            normalizeMode="thinking"
             theme={deepThinkingBodyMarkdownTheme}
             testID={`${testID}-body`}
           />

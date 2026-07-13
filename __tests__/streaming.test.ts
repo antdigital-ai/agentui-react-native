@@ -171,16 +171,14 @@ describe('getStreamingStableMarkdownBlock', () => {
     );
   });
 
-  it('holds incomplete ** bold until closing delimiter', () => {
-    expect(getStreamingStableMarkdownBlock('**BTC-PERP')).toBe('');
-    expect(getStreamingStableMarkdownBlock('**BTC-PERP*')).toBe('');
-    expect(getStreamingStableMarkdownBlock('**BTC-PERP**')).toBe('**BTC-PERP**');
-    expect(getStreamingStableMarkdownBlock('Line **bold')).toBe('Line ');
-    expect(getStreamingStableMarkdownBlock('**done**\n**open')).toBe('**done**\n');
+  it('does not hold back incomplete ** bold (handled by remend during render)', () => {
+    expect(getStreamingStableMarkdownBlock('**BTC-PERP')).toBe('**BTC-PERP');
+    expect(getStreamingStableMarkdownBlock('Line **bold')).toBe('Line **bold');
+    expect(getStreamingStableMarkdownBlock('**done**\n**open')).toBe('**done**\n**open');
   });
 
-  it('holds incomplete __ bold until closing delimiter', () => {
-    expect(getStreamingStableMarkdownBlock('__Bear Case')).toBe('');
+  it('does not hold back incomplete __ bold (handled by remend during render)', () => {
+    expect(getStreamingStableMarkdownBlock('__Bear Case')).toBe('__Bear Case');
     expect(getStreamingStableMarkdownBlock('__Bear Case__')).toBe('__Bear Case__');
   });
 });

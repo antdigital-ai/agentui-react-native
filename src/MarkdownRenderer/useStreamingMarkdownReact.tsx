@@ -17,6 +17,7 @@ import { isPlainMarkdownText } from './plainText';
 import {
   normalizeChatMarkdown,
   normalizeStreamingMarkdownLight,
+  normalizeThinkingMarkdown,
 } from './normalizeChatMarkdown';
 
 const EMPTY_BLOCKS: string[] = [];
@@ -55,11 +56,21 @@ export function useStreamingMarkdownReact(
 
   const normalizedContent = useMemo(() => {
     if (!content) return content;
+    const mode = options?.normalizeMode ?? 'assistant';
     if (streamTailActive) {
-      return normalizeStreamingMarkdownLight(content);
+      if (mode === 'thinking') {
+        return normalizeThinkingMarkdown(content, { streaming: true });
+      }
+      return normalizeStreamingMarkdownLight(content, { mode });
+    }
+    if (mode === 'thinking') {
+      return normalizeThinkingMarkdown(content, { streaming: false });
+    }
+    if (mode === 'user' || mode === 'minimal') {
+      return normalizeChatMarkdown(content, { streaming: false, mode });
     }
     return normalizeChatMarkdown(content, { streaming: false });
-  }, [content, streamTailActive]);
+  }, [content, streamTailActive, options?.normalizeMode]);
 
   const revisionTrackerRef = useRef<{ prev?: string; generation: number }>({
     generation: 0,
@@ -148,6 +159,7 @@ export function useStreamingMarkdownReact(
           isFirstBlock={index === 0}
           streaming={streamTailActive}
           theme={theme}
+          parseIncompleteMarkdown={options?.parseIncompleteMarkdown}
         />,
       );
     }

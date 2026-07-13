@@ -7,8 +7,17 @@ export { markdownToReactSync } from './MarkdownRenderer/markdownToReactSync';
 export { useContentThrottle } from './MarkdownRenderer/useContentThrottle';
 export { createHastProcessor } from './MarkdownRenderer/processor';
 export { splitMarkdownBlocks } from './MarkdownRenderer/streaming/splitMarkdownBlocks';
-export { normalizeChatMarkdown } from './MarkdownRenderer/normalizeChatMarkdown';
-export type { NormalizeChatMarkdownOptions } from './MarkdownRenderer/normalizeChatMarkdown';
+export { normalizeChatMarkdown, normalizeUserMarkdown, normalizeThinkingMarkdown } from './MarkdownRenderer/normalizeChatMarkdown';
+export type {
+  NormalizeChatMarkdownOptions,
+  NormalizeChatMarkdownMode,
+} from './MarkdownRenderer/normalizeChatMarkdown';
+export {
+  parseIncompleteMarkdown,
+  DEFAULT_REMEND_OPTIONS,
+} from './MarkdownRenderer/parseIncompleteMarkdown';
+export type { ParseIncompleteMarkdownOptions } from './MarkdownRenderer/parseIncompleteMarkdown';
+export { preprocessMaiInlineSyntax } from './MarkdownRenderer/preprocessMaiInlineSyntax';
 export {
   parseAgentCardJson,
   normalizeAgentCardData,

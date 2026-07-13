@@ -589,6 +589,16 @@ export const buildRnComponents = ({
         {wrapInlineChildren(props.children)}
       </Text>
     ),
+    mark: (props) => (
+      <Text
+        style={{
+          backgroundColor: theme.colors.codeBackground,
+          color: theme.colors.text,
+        }}
+      >
+        {wrapInlineChildren(props.children)}
+      </Text>
+    ),
     sub: (props) => {
       const baseSize = typeof body.fontSize === 'number' ? body.fontSize : 14;
       return (

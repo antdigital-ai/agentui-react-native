@@ -9,3 +9,5 @@ export { default as remarkGfm } from 'remark-gfm';
 export { default as remarkRehype } from 'remark-rehype';
 export { toJsxRuntime } from 'hast-util-to-jsx-runtime';
 export { visit } from 'unist-util-visit';
+export { default as remend } from 'remend';
+export type { RemendOptions } from 'remend';

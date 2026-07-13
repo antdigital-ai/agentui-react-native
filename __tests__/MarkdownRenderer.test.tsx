@@ -159,7 +159,7 @@ describe('MarkdownRenderer', () => {
     expect(secondGap).toBe(figmaHomeSpacing.listItemGap);
   });
 
-  it('hides incomplete ** markup while streaming', () => {
+  it('completes incomplete ** markup while streaming (Streamdown remend)', () => {
     const ui = (content: string) => (
       <MarkdownThemeProvider>
         <MarkdownRenderer
@@ -169,9 +169,8 @@ describe('MarkdownRenderer', () => {
         />
       </MarkdownThemeProvider>
     );
-    const { rerender, getByText, queryByText } = render(ui('Line **bold'));
-    expect(getByText('Line')).toBeTruthy();
-    expect(queryByText('bold')).toBeNull();
+    const { rerender, getByText } = render(ui('Line **bold'));
+    expect(getByText('bold')).toBeTruthy();
     rerender(ui('Line **bold**'));
     expect(getByText('bold')).toBeTruthy();
   });

@@ -4,8 +4,10 @@ import type { Processor } from '../remarkBundle';
 import type { MarkdownRnComponentsBundle } from '../buildRnComponents';
 import { renderMarkdownBlock } from '../renderMarkdownBlock';
 import { withBlockLayout } from '../blockLayout';
+import type { ParseIncompleteMarkdownOptions } from '../parseIncompleteMarkdown';
 import type { MarkdownTheme } from '../../theme/defaultTheme';
 import { shouldReparseLastBlock } from './lastBlockThrottle';
+import { parseIncompleteMarkdown } from '../parseIncompleteMarkdown';
 import { getStreamingStableMarkdownBlock } from './stableTailMarkdown';
 
 export interface MarkdownBlockPieceProps {
@@ -16,6 +18,7 @@ export interface MarkdownBlockPieceProps {
   isFirstBlock: boolean;
   streaming: boolean;
   theme: MarkdownTheme;
+  parseIncompleteMarkdown?: ParseIncompleteMarkdownOptions;
 }
 
 export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
@@ -26,6 +29,7 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
   isFirstBlock,
   streaming,
   theme,
+  parseIncompleteMarkdown: remendOptions,
 }: MarkdownBlockPieceProps) {
   const lastParsedRef = useRef<{
     source: string;
@@ -80,9 +84,10 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
     }
 
     const stableSource = getStreamingStableMarkdownBlock(blockSource);
+    const renderSource = parseIncompleteMarkdown(stableSource, remendOptions);
     const prev = lastParsedRef.current;
 
-    if (!stableSource.trim() && blockSource.trim()) {
+    if (!renderSource.trim() && blockSource.trim()) {
       if (prev?.node) return prev.node;
       return wrap(
         <Text style={t.typography.body}>{blockSource}</Text>,
@@ -91,7 +96,7 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
 
     if (
       prev &&
-      stableSource === prev.source &&
+      renderSource === prev.source &&
       blockSource !== stableSource
     ) {
       return prev.node;
@@ -99,8 +104,8 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
 
     if (
       prev &&
-      !shouldReparseLastBlock(prev.source, stableSource, true, {
-        stableNew: stableSource,
+      !shouldReparseLastBlock(prev.source, renderSource, true, {
+        stableNew: renderSource,
         stablePrev: prev.source,
       })
     ) {
@@ -108,9 +113,9 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
     }
 
     const el = wrap(
-      renderMarkdownBlock(stableSource, processor, bundle, t),
+      renderMarkdownBlock(renderSource, processor, bundle, t),
     );
-    lastParsedRef.current = { source: stableSource, node: el };
+    lastParsedRef.current = { source: renderSource, node: el };
     return el;
   }, [
     variant,
@@ -119,6 +124,7 @@ export const MarkdownBlockPiece = memo(function MarkdownBlockPiece({
     componentBundle,
     streaming,
     isFirstBlock,
+    remendOptions,
   ]);
 
   return <>{node}</>;

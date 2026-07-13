@@ -2,6 +2,7 @@ import {
   normalizeChatMarkdown,
   normalizeStreamingMarkdownLight,
 } from '../src/MarkdownRenderer/normalizeChatMarkdown';
+import { parseIncompleteMarkdown } from '../src/MarkdownRenderer/parseIncompleteMarkdown';
 
 describe('normalizeChatMarkdown', () => {
   it('inserts blank line before opening fence glued to heading text', () => {
@@ -159,7 +160,7 @@ describe('normalizeChatMarkdown', () => {
 
   it('does not strip complete inline bold while streaming', () => {
     expect(normalizeStreamingMarkdownLight('Line **bold**')).toBe('Line **bold**');
-    expect(normalizeStreamingMarkdownLight('Line **bold')).toBe('Line **bold');
+    expect(parseIncompleteMarkdown('Line **bold')).toBe('Line **bold**');
   });
 
   it('streaming light path matches streaming normalize output', () => {
@@ -175,5 +176,33 @@ describe('normalizeChatMarkdown', () => {
         normalizeChatMarkdown(sample, { streaming: true }),
       );
     }
+  });
+
+  it('unescapes literal \\n between GFM table rows from tool/page-read payloads', () => {
+    const input =
+      '| 测试用例 | 类型 | 预期结果 |\\n|----------|------|----------|\\n| 正常 title | Happy Path | 返回新 Todo，id 递增 |';
+    const normalized = normalizeChatMarkdown(input);
+    expect(normalized).toContain('| 测试用例 | 类型 | 预期结果 |\n|----------|------|----------|');
+  });
+
+  it('unescapes line-numbered read output glued with literal \\n', () => {
+    const input =
+      '任意长字符串可写入，潜在内存溢出 | 中 |\\n35: | 无 id 格式校验 | `get(undefined)` 行为不可预期 | 中 |\\n36: | complete 不幂等 | 已完成的 todo 再次 complete 无提示 | 低 |';
+    const normalized = normalizeChatMarkdown(input);
+    expect(normalized).not.toContain('\\n');
+    expect(normalized).toContain('35:');
+    expect(normalized).toContain('无 id 格式校验');
+    expect(normalized).toContain('complete 不幂等');
+  });
+
+  it('does not unescape literal \\n in user markdown mode', () => {
+    const input = 'docs say to write \\\\n in config files';
+    expect(normalizeChatMarkdown(input, { mode: 'user' })).toBe(input);
+  });
+
+  it('strips leaked DSML tool markup before markdown render', () => {
+    const input =
+      'Plan ready.\n<|DSML| tool_calls><|DSML| invoke name="question"><|DSML|/invoke><|DSML|/tool_calls>';
+    expect(normalizeChatMarkdown(input)).toBe('Plan ready.');
   });
 });

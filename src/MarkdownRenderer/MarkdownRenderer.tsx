@@ -31,6 +31,8 @@ const MarkdownRendererInner = forwardRef<
     linkConfig,
     eleRender,
     components,
+    normalizeMode,
+    parseIncompleteMarkdown,
     testID = 'markdown-renderer',
   } = props;
 
@@ -59,6 +61,8 @@ const MarkdownRendererInner = forwardRef<
     components,
     eleRender,
     contentRevisionSource: streaming ? sourceText : undefined,
+    normalizeMode,
+    parseIncompleteMarkdown,
   });
 
   return (
