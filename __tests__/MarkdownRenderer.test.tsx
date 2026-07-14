@@ -63,6 +63,20 @@ describe('MarkdownRenderer', () => {
     expect(getByText('$456.20 M')).toBeTruthy();
   });
 
+  it('renders hr full-width with moderate vertical margin', () => {
+    const { getByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'段首结论\n\n---\n\n## 产品化'}
+      />,
+    );
+    const hr = getByTestId('markdown-hr');
+    expect(hr).toBeTruthy();
+    const style = StyleSheet.flatten(hr.props.style);
+    expect(style.width).toBe('100%');
+    expect(style.marginVertical).toBe(figmaHomeSpacing.listItemGap);
+  });
+
   it('renders full long table cell text for horizontal scroll', () => {
     const longValue =
       'did:anvita:0x169b9fd401bf4be4f6f7market-information-discovery-service';

@@ -959,9 +959,12 @@ export const buildRnComponents = ({
       <View
         testID="markdown-hr"
         style={{
-          height: 1,
+          height: StyleSheet.hairlineWidth,
+          width: '100%',
+          alignSelf: 'stretch',
           backgroundColor: theme.colors.hr,
-          marginVertical: theme.spacing.paragraphGap * 4,
+          // Keep close to paragraph rhythm — *4 left huge empty bands on both sides.
+          marginVertical: theme.spacing.paragraphGap,
         }}
       />
     ),
