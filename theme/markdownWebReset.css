@@ -75,6 +75,13 @@
   border: 0;
 }
 
+/* Nested in vertical MessageList: prefer pan-x so wide tables can scroll. */
+.agentui-markdown-table--scrollable,
+.agentui-markdown-table--scrollable > div {
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
 .agentui-markdown-table-th {
   padding-top: 6px;
   padding-bottom: 6px;

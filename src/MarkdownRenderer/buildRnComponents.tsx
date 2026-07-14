@@ -171,7 +171,9 @@ const TableColumnContext = React.createContext<TableColumnContextValue | null>(
 );
 
 const defaultTableContext: TableColumnContextValue = {
-  layoutMode: 'fill',
+  // Unconstrained until MarkdownTable measures — fill would shrink cells and
+  // under-report natural column widths (horizontal scroll never enables).
+  layoutMode: 'scroll',
   layoutReady: false,
   widths: EMPTY_WIDTHS,
   report: noopReport,
@@ -262,8 +264,12 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
   const columnsMeasured =
     containerWidth > 0 && sumColumnWidths(widths) > 0;
   const contentOverflows =
-    columnsMeasured && sumColumnWidths(widths) > containerWidth;
-  const layoutMode: TableLayoutMode = contentOverflows ? 'scroll' : 'fill';
+    columnsMeasured && sumColumnWidths(widths) > containerWidth + 1;
+  // Measure with unconstrained (scroll) layout first; only fill when content fits.
+  // Starting in fill shrinks cells (minWidth: 0) so onLayout under-reports width and
+  // scroll stays disabled while overflow:hidden still clips text.
+  const layoutMode: TableLayoutMode =
+    !columnsMeasured || contentOverflows ? 'scroll' : 'fill';
 
   const contextValue = React.useMemo<TableColumnContextValue>(
     () => ({ layoutMode, layoutReady: columnsMeasured, widths, report }),
@@ -286,18 +292,34 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     overflow: 'hidden',
   };
 
+  const scrollViewStyle: ViewStyle = {
+    width: '100%',
+    // Prefer horizontal pans on nested MessageList FlatList (esp. RN Web / WebView).
+    ...(Platform.OS === 'web' && contentOverflows
+      ? ({ touchAction: 'pan-x' } as ViewStyle)
+      : null),
+  };
+
   return (
     <View
       testID="markdown-table"
-      {...webClassName('agentui-markdown-table')}
+      {...webClassName(
+        contentOverflows
+          ? 'agentui-markdown-table agentui-markdown-table--scrollable'
+          : 'agentui-markdown-table',
+      )}
       style={tableBlockStyle}
       onLayout={handleContainerLayout}
     >
       <ScrollView
         horizontal
+        nestedScrollEnabled
+        directionalLockEnabled
         scrollEnabled={contentOverflows}
-        showsHorizontalScrollIndicator={Platform.OS === 'web'}
-        style={{ width: '100%' }}
+        showsHorizontalScrollIndicator={contentOverflows}
+        bounces={contentOverflows}
+        overScrollMode={contentOverflows ? 'auto' : 'never'}
+        style={scrollViewStyle}
         contentContainerStyle={
           layoutMode === 'fill' ? { minWidth: '100%' } : undefined
         }
@@ -370,6 +392,18 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
           ...(columnWidth ? { width: columnWidth } : undefined),
         };
 
+  // Keep scroll-mode text on one line so natural width measures correctly.
+  const measureTextStyle: TextStyle =
+    layoutMode === 'scroll'
+      ? ({
+          ...cellTextStyle,
+          flexShrink: 0,
+          ...(Platform.OS === 'web'
+            ? ({ whiteSpace: 'nowrap' } as TextStyle)
+            : null),
+        } as TextStyle)
+      : cellTextStyle;
+
   return (
     <View
       {...webClassName(tableCellWebClass(isHeaderCell, columnIndex))}
@@ -386,10 +420,14 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
       }}
     >
       <View
-        style={{ alignSelf: 'flex-start', ...(lineHeight ? { minHeight: lineHeight } : undefined) }}
+        style={{
+          alignSelf: 'flex-start',
+          ...(layoutMode === 'scroll' ? { flexShrink: 0 } : null),
+          ...(lineHeight ? { minHeight: lineHeight } : undefined),
+        }}
         onLayout={handleContentLayout}
       >
-        {wrapViewChildren(children, cellTextStyle)}
+        {wrapViewChildren(children, measureTextStyle)}
       </View>
     </View>
   );
@@ -982,7 +1020,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell
-          layoutMode={layoutMode ?? 'fill'}
+          layoutMode={layoutMode ?? 'scroll'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
           hasContent={hasContent ?? true}
@@ -999,7 +1037,7 @@ export const buildRnComponents = ({
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell={false}
-          layoutMode={layoutMode ?? 'fill'}
+          layoutMode={layoutMode ?? 'scroll'}
           columnWidth={columnWidth}
           reportWidth={reportWidth ?? noopReport}
           hasContent={hasContent ?? true}

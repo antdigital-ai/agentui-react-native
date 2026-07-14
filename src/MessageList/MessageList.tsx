@@ -113,6 +113,7 @@ export function MessageList({
       ]}
       contentContainerStyle={listContentContainerStyle}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       onContentSizeChange={onContentSizeChange}
       removeClippedSubviews={false}
       windowSize={7}

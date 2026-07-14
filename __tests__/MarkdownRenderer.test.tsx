@@ -76,6 +76,20 @@ describe('MarkdownRenderer', () => {
     expect(getByText(longValue)).toBeTruthy();
   });
 
+  it('keeps long chinese capability text intact for table scroll', () => {
+    const longValue =
+      '分析多个资产的最新市场趋势和关键数据，生成研究报告';
+    const { getByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={`| Agent | 能力范围 |\n| --- | --- |\n| Asset Research (资产研究) | ${longValue} |`}
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(getByText(longValue)).toBeTruthy();
+    expect(getByText('Asset Research (资产研究)')).toBeTruthy();
+  });
+
   it('renders table with empty cells without crashing', () => {
     const { getByTestId, getByText } = wrap(
       <MarkdownRenderer

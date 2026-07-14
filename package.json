@@ -1,8 +1,8 @@
 {
   "name": "@antdigital/agentui-react-native",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "packageManager": "npm@10.9.2",
-  "description": "Agent UI components for React Native — Markdown renderer with streaming",
+  "description": "Agent UI components for React Native \u2014 Markdown renderer with streaming",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/antdigital-ai/agentui-react-native.git"
