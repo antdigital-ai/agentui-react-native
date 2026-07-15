@@ -3,7 +3,7 @@ import { FlatList, Platform, type ListRenderItem } from 'react-native';
 import { compactChatTheme } from '../theme/mobileTheme';
 import { useCompactLayout } from '../theme/useCompactLayout';
 import type { LayoutDensity } from '../theme/layout';
-import { mergeChatTheme, defaultChatTheme } from './chatTheme';
+import { mergeChatTheme, defaultChatTheme, desktopChatTheme } from './chatTheme';
 import { MessageBubble } from './MessageBubble';
 import type { ChatMessage, MessageListProps } from './types';
 import { webClassName } from '../theme/webClassName';
@@ -24,7 +24,7 @@ export function MessageList({
     () =>
       mergeChatTheme(
         defaultChatTheme,
-        compact ? compactChatTheme : undefined,
+        compact ? compactChatTheme : desktopChatTheme,
         chatThemePartial,
       ),
     [chatThemePartial, compact],

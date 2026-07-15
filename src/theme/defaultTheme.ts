@@ -5,6 +5,7 @@ import {
   headingMarginsDesktop,
   type HeadingMarginMap,
 } from './headingMargins';
+import { figmaHomeMarkdownTheme } from './figmaHomeTheme';
 
 export interface MarkdownTheme {
   colors: {
@@ -53,6 +54,8 @@ export interface MarkdownTheme {
     tableBlockMarginVertical: number;
     headingMarginTop: number;
     headingMarginBottom: number;
+    /** Vertical space above/below GFM `---` (Figma Home `901:20534`). */
+    hrMarginVertical: number;
   };
   blockquote: ViewStyle;
   headingMarginByLevel: HeadingMarginMap;
@@ -66,7 +69,14 @@ export type MarkdownThemeOverride = {
   headingMarginByLevel?: Partial<HeadingMarginMap>;
 };
 
-export const defaultTheme: MarkdownTheme = {
+/** Default = Figma 首页 Home (`675:23865`). */
+export const defaultTheme: MarkdownTheme = figmaHomeMarkdownTheme;
+
+/**
+ * Wide / desktop agentic-ui editor scale — only when
+ * `layoutDensity="comfortable"`.
+ */
+export const desktopMarkdownTheme: MarkdownThemeOverride = {
   colors: {
     text: agenticColors.text,
     textMuted: agenticColors.textMuted,
@@ -81,15 +91,28 @@ export const defaultTheme: MarkdownTheme = {
     tableHeaderBackground: agenticColors.tableHeaderBackground,
     taskCheckboxBorder: agenticColors.borderLight,
     hr: agenticColors.borderLight,
-    errorBackground: '#fff2f0',
-    errorBorder: '#ffccc7',
   },
   typography: {
     body: { fontSize: 15, lineHeight: 23, ...fontFamilies.body },
-    emphasis: { fontSize: 15, lineHeight: 23, fontWeight: '600', ...fontFamilies.body },
-    caption: { fontSize: 12, lineHeight: 17, fontWeight: '500', ...fontFamilies.body },
+    emphasis: {
+      fontSize: 15,
+      lineHeight: 23,
+      fontWeight: '600',
+      ...fontFamilies.body,
+    },
+    caption: {
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: '500',
+      ...fontFamilies.body,
+    },
     tableLabel: { fontSize: 15, lineHeight: 18, ...fontFamilies.body },
-    tableValue: { fontSize: 15, lineHeight: 18, fontWeight: '600', ...fontFamilies.body },
+    tableValue: {
+      fontSize: 15,
+      lineHeight: 18,
+      fontWeight: '600',
+      ...fontFamilies.body,
+    },
     h1: { fontSize: 30, lineHeight: 38, fontWeight: '600', ...fontFamilies.body },
     h2: { fontSize: 24, lineHeight: 32, fontWeight: '600', ...fontFamilies.body },
     h3: { fontSize: 18, lineHeight: 26, fontWeight: '600', ...fontFamilies.body },
@@ -112,6 +135,7 @@ export const defaultTheme: MarkdownTheme = {
     tableBlockMarginVertical: agenticSpacing.margin1x,
     headingMarginTop: agenticSpacing.margin2x,
     headingMarginBottom: agenticSpacing.margin2x,
+    hrMarginVertical: 20,
   },
   blockquote: {
     borderLeftWidth: 3,

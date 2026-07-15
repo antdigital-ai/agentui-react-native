@@ -2,12 +2,9 @@ import type { ChatTheme } from '../MessageList/chatTheme';
 import type { MarkdownThemeOverride } from './defaultTheme';
 import { agenticColors } from './agenticTokens';
 import { figmaHomeSpacing } from './figmaHomeSpacing';
-import { figmaHomeTextStyles } from './figmaHomeTypography';
-import { figmaHomeCodeFontFamily } from './fonts';
-import { headingMarginsMobile } from './headingMargins';
+import { figmaHomeMarkdownTheme } from './figmaHomeTheme';
 
 const figma = agenticColors.figmaHome;
-const t = figmaHomeTextStyles;
 
 /**
  * Chat chrome — Figma「Crypto Analysis - crypto」`675:23865` (375×812).
@@ -28,52 +25,17 @@ export const compactChatTheme: Partial<ChatTheme> = {
   assistantBubbleBackground: 'transparent',
 };
 
-/** Figma: 段落/base 14·1.8, 标题/h4 16·1.2, 正文/lg-强调 16·600, 正文/sm 12 */
+/**
+ * @deprecated Prefer `defaultTheme` / `figmaHomeMarkdownTheme` —
+ * Figma Home is now the library default. Kept as a no-op-shaped override
+ * for hosts that still pass `layoutDensity="compact"`.
+ */
 export const compactMarkdownTheme: MarkdownThemeOverride = {
-  colors: {
-    text: figma.text,
-    textMuted: figma.textSecondary,
-    link: figma.linkPrimary,
-    linkUnderline: figma.linkPrimary,
-    codeText: figma.text,
-    border: figma.tableRowBorder,
-    tableHeaderBackground: 'transparent',
-  },
-  typography: {
-    body: { ...t.body, color: figma.text },
-    emphasis: { ...t.emphasis, color: figma.text },
-    caption: { ...t.caption, color: figma.textCaption },
-    tableLabel: { ...t.label },
-    tableValue: { ...t.tableRowValue },
-    h1: { ...t.sectionTitle, color: figma.text },
-    h2: { ...t.sectionTitle, color: figma.text },
-    h3: { ...t.sectionTitle, color: figma.text },
-    h4: { ...t.sectionTitle, color: figma.text },
-    h5: { ...t.caption, color: figma.textSecondary, textAlign: 'left' },
-    h6: {
-      ...t.caption,
-      color: figma.textCaption,
-      textAlign: 'center',
-    },
-    code: { fontSize: 13, lineHeight: 18, fontWeight: '500', ...figmaHomeCodeFontFamily },
-    inlineCode: { fontSize: 13, fontWeight: '500', ...figmaHomeCodeFontFamily },
-  },
-  spacing: {
-    paragraphGap: figmaHomeSpacing.listItemGap,
-    leadingParagraphGap: figmaHomeSpacing.contentBlockGap,
-    listIndent: figmaHomeSpacing.listNestedIndent,
-    /** Figma list rows stack on line-height; no extra 12px between bullets. */
-    listItemGap: 0,
-    listBlockMarginTop: 0,
-    listBlockMarginBottom: 0,
-    blockquotePadding: figmaHomeSpacing.inSectionTitleGap,
-    codeBlockPadding: figmaHomeSpacing.inSectionTitleGap,
-    tableCellPadding: figmaHomeSpacing.inSectionTitleGap / 2,
-    tableBlockMarginVertical: figmaHomeSpacing.inSectionTitleGap,
-    headingMarginTop: figmaHomeSpacing.sectionGap,
-    headingMarginBottom: figmaHomeSpacing.inSectionTitleGap,
-  },
-  headingMarginByLevel: headingMarginsMobile,
+  colors: { ...figmaHomeMarkdownTheme.colors },
+  typography: { ...figmaHomeMarkdownTheme.typography },
+  spacing: { ...figmaHomeMarkdownTheme.spacing },
+  blockquote: { ...figmaHomeMarkdownTheme.blockquote },
+  headingMarginByLevel: figmaHomeMarkdownTheme.headingMarginByLevel,
 };
 
 export function mergeMarkdownThemeOverrides(

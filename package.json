@@ -1,8 +1,8 @@
 {
-  "name": "@antdigital/agentui-react-native",
-  "version": "0.1.15",
+  "name": "@alipay/agentui-react-native",
+  "version": "0.1.16",
   "packageManager": "npm@10.9.2",
-  "description": "Agent UI components for React Native \u2014 Markdown renderer with streaming",
+  "description": "Agent UI components for React Native — Markdown renderer with streaming",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/antdigital-ai/agentui-react-native.git"
@@ -13,7 +13,7 @@
   "homepage": "https://github.com/antdigital-ai/agentui-react-native#readme",
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://registry.antgroup-inc.cn"
   },
   "main": "lib/index.js",
   "module": "lib/index.mjs",

@@ -1,9 +1,11 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { MarkdownRenderer } from '../src/MarkdownRenderer/MarkdownRenderer';
 import { MarkdownThemeProvider } from '../src/theme/MarkdownThemeProvider';
+import { agenticColors } from '../src/theme/agenticTokens';
 import { figmaHomeSpacing } from '../src/theme/figmaHomeSpacing';
+import type { MarkdownRendererEleProps } from '../src/MarkdownRenderer/types';
 
 const wrap = (ui: React.ReactElement) =>
   render(<MarkdownThemeProvider>{ui}</MarkdownThemeProvider>);
@@ -63,7 +65,41 @@ describe('MarkdownRenderer', () => {
     expect(getByText('$456.20 M')).toBeTruthy();
   });
 
-  it('renders hr full-width with moderate vertical margin', () => {
+  it('invokes eleRender for table and forwards ScrollView props', () => {
+    const onScrollBeginDrag = jest.fn();
+    const eleRender = jest.fn(
+      (props: MarkdownRendererEleProps, defaultDom: React.ReactNode) => {
+        if (props.tagName === 'table') {
+          return React.cloneElement(
+            defaultDom as React.ReactElement,
+            { onScrollBeginDrag },
+          );
+        }
+        return defaultDom;
+      },
+    );
+    const { getByTestId, UNSAFE_getAllByType } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        eleRender={eleRender}
+        content={'| header | value |\n| --- | --- |\n| 24H Volume | $456.20 M |'}
+      />,
+    );
+    expect(getByTestId('markdown-table')).toBeTruthy();
+    expect(eleRender).toHaveBeenCalled();
+    expect(
+      eleRender.mock.calls.some(
+        ([props]: [MarkdownRendererEleProps]) => props.tagName === 'table',
+      ),
+    ).toBe(true);
+    const tableScroll = UNSAFE_getAllByType(ScrollView).find(
+      (node) => node.props.onScrollBeginDrag === onScrollBeginDrag,
+    );
+    expect(tableScroll).toBeTruthy();
+    expect(tableScroll?.props.alwaysBounceVertical).toBe(false);
+  });
+
+  it('renders hr full-width with Figma Home vertical margin', () => {
     const { getByTestId } = wrap(
       <MarkdownRenderer
         layoutDensity="compact"
@@ -74,7 +110,10 @@ describe('MarkdownRenderer', () => {
     expect(hr).toBeTruthy();
     const style = StyleSheet.flatten(hr.props.style);
     expect(style.width).toBe('100%');
-    expect(style.marginVertical).toBe(figmaHomeSpacing.listItemGap);
+    expect(style.height).toBe(1);
+    expect(style.marginHorizontal).toBe(0);
+    expect(style.marginVertical).toBe(figmaHomeSpacing.hrMarginVertical);
+    expect(style.backgroundColor).toBe(agenticColors.figmaHome.tableRowBorder);
   });
 
   it('renders full long table cell text for horizontal scroll', () => {
@@ -157,6 +196,46 @@ describe('MarkdownRenderer', () => {
     expect(getByTestId('markdown-list-unordered')).toBeTruthy();
     expect(getByText('Bull point one')).toBeTruthy();
     expect(getByText('Bull point two')).toBeTruthy();
+  });
+
+  it('indents nested lists in compact layout', () => {
+    const { getAllByTestId, getByText } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'- Outer\n  - Nested one\n  - Nested two'}
+      />,
+    );
+    const lists = getAllByTestId('markdown-list-unordered');
+    expect(lists.length).toBeGreaterThanOrEqual(2);
+    const nested = lists.find(
+      (node) => StyleSheet.flatten(node.props.style).paddingLeft === 20,
+    );
+    expect(nested).toBeTruthy();
+    expect(getByText('Nested one')).toBeTruthy();
+  });
+
+  it('zeros top margin on the first compact section heading even if not h4', () => {
+    const { getByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'Intro line\n\n## What this means\n\nBody'}
+      />,
+    );
+    const heading = getByTestId('markdown-heading-2');
+    expect(StyleSheet.flatten(heading.props.style).marginTop).toBe(0);
+  });
+
+  it('applies Figma Home colors to compact blockquotes', () => {
+    const { getByTestId } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'> Disclaimer quote'}
+      />,
+    );
+    const style = StyleSheet.flatten(getByTestId('markdown-blockquote').props.style);
+    expect(style.borderLeftColor).toBe(agenticColors.figmaHome.tableRowBorder);
+    expect(style.paddingLeft).toBe(12);
+    expect(style.paddingTop).toBe(8);
   });
 
   it('renders font tag color and size in list text', () => {

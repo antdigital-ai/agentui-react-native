@@ -32,7 +32,8 @@ export {
   MarkdownThemeProvider,
   useMarkdownTheme,
 } from './theme/MarkdownThemeProvider';
-export { defaultTheme } from './theme/defaultTheme';
+export { defaultTheme, desktopMarkdownTheme } from './theme/defaultTheme';
+export { figmaHomeMarkdownTheme } from './theme/figmaHomeTheme';
 export type {
   MarkdownRendererProps,
   MarkdownRendererRef,
@@ -48,6 +49,7 @@ export {
   MessageList,
   MessageBubble,
   defaultChatTheme,
+  desktopChatTheme,
   mergeChatTheme,
 } from './MessageList';
 export {

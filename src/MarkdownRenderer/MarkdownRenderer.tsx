@@ -7,6 +7,7 @@ import { Text, View } from 'react-native';
 import { webClassName } from '../theme/webClassName';
 import { MarkdownThemeProvider } from '../theme/MarkdownThemeProvider';
 import { compactMarkdownTheme, mergeMarkdownThemeOverrides } from '../theme/mobileTheme';
+import { desktopMarkdownTheme } from '../theme/defaultTheme';
 import { useCompactLayout } from '../theme/useCompactLayout';
 import type {
   MarkdownRendererProps,
@@ -94,10 +95,11 @@ export const MarkdownRenderer = forwardRef<
 >((props, ref) => {
   const { layoutDensity = 'auto', theme } = props;
   const compact = useCompactLayout(layoutDensity);
+  // Base theme is Figma Home; only `comfortable` switches to desktop agentic scale.
   const themeProvider = useMemo(
     () =>
       mergeMarkdownThemeOverrides(
-        compact ? compactMarkdownTheme : undefined,
+        compact ? compactMarkdownTheme : desktopMarkdownTheme,
         theme,
       ),
     [compact, theme],

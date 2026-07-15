@@ -8,11 +8,12 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type ScrollViewProps,
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import type { MarkdownTheme } from '../theme/defaultTheme';
-import { headingMarginsDesktop, type HeadingLevel } from '../theme/headingMargins';
+import { type HeadingLevel } from '../theme/headingMargins';
 import { webClassName } from '../theme/webClassName';
 import type {
   MarkdownRendererEleProps,
@@ -64,6 +65,8 @@ const tableRowBorderStyle = (theme: MarkdownTheme): ViewStyle => ({
   borderBottomWidth: 1,
   borderBottomColor: theme.colors.border,
 });
+
+const ListDepthContext = React.createContext(0);
 
 const tableCellPaddingStyle = (theme: MarkdownTheme): ViewStyle => ({
   paddingVertical: theme.spacing.tableCellPadding,
@@ -204,7 +207,7 @@ type MarkdownTableProps = {
   body: TextStyle;
   children: React.ReactNode;
   node?: unknown;
-};
+} & Omit<ScrollViewProps, 'children' | 'horizontal'>;
 
 const tableSectionStyle = (layoutMode: TableLayoutMode): ViewStyle =>
   layoutMode === 'fill'
@@ -216,6 +219,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
   body,
   children,
   node,
+  ...restProps
 }) => {
   if (!tableAstHasVisibleBodyRows(node)) {
     return null;
@@ -315,6 +319,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
         horizontal
         nestedScrollEnabled
         directionalLockEnabled
+        alwaysBounceVertical={false}
         scrollEnabled={contentOverflows}
         showsHorizontalScrollIndicator={contentOverflows}
         bounces={contentOverflows}
@@ -323,6 +328,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
         contentContainerStyle={
           layoutMode === 'fill' ? { minWidth: '100%' } : undefined
         }
+        {...restProps}
       >
         <TableColumnContext.Provider value={contextValue}>
           <View style={tableSectionStyle(layoutMode)}>
@@ -439,6 +445,7 @@ type MarkdownTableRowProps = {
   theme: MarkdownTheme;
   body: TextStyle;
   rowNode?: unknown;
+  showBottomBorder?: boolean;
   children: React.ReactNode;
 };
 
@@ -446,6 +453,7 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
   theme,
   body,
   rowNode,
+  showBottomBorder = true,
   children,
 }) => {
   const { layoutMode, widths, report } = useTableColumnWidths();
@@ -458,7 +466,7 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
       style={{
         ...tableSectionStyle(layoutMode),
         flexDirection: 'row',
-        ...tableRowBorderStyle(theme),
+        ...(showBottomBorder ? tableRowBorderStyle(theme) : null),
       }}
     >
       {cells.map((cell, index) =>
@@ -506,11 +514,21 @@ export const buildRnComponents = ({
       const typo = theme.typography[`h${level}`];
       const levelKey = level as HeadingLevel;
       const margins =
-        theme.headingMarginByLevel[levelKey] ?? headingMarginsDesktop[levelKey];
+        theme.headingMarginByLevel[levelKey] ??
+        theme.headingMarginByLevel[4];
       const seen = layout.sectionHeadingIndex[levelKey] ?? 0;
       layout.sectionHeadingIndex[levelKey] = seen + 1;
+      // Figma Home collapses h1–h4 to section titles; skip extra top gap on the first one.
+      const isSectionTitle = levelKey <= 4;
+      const priorSectionCount = (
+        [1, 2, 3, 4] as HeadingLevel[]
+      ).reduce((total, level) => {
+        const count = layout.sectionHeadingIndex[level] ?? 0;
+        // Current level already incremented above — exclude this instance.
+        return total + (level === levelKey ? Math.max(0, count - 1) : count);
+      }, 0);
       const marginTop =
-        levelKey === 4 && seen === 0 ? 0 : margins.marginTop;
+        isSectionTitle && priorSectionCount === 0 ? 0 : margins.marginTop;
       const defaultDom = (
         <Text
           accessibilityRole="header"
@@ -709,6 +727,7 @@ export const buildRnComponents = ({
     },
 
     ul: (props) => {
+      const depth = React.useContext(ListDepthContext);
       const items = React.Children.toArray(props.children);
       const lastLiIndex = (() => {
         for (let i = items.length - 1; i >= 0; i--) {
@@ -717,27 +736,30 @@ export const buildRnComponents = ({
         return -1;
       })();
       return (
-        <View
-          testID="markdown-list-unordered"
-          style={{
-            marginTop: theme.spacing.listBlockMarginTop,
-            marginBottom: theme.spacing.listBlockMarginBottom,
-            paddingLeft: 0,
-          }}
-        >
-          {items.map((child, index) => {
-            if (!React.isValidElement(child)) {
-              return wrapViewChildren(child, body);
-            }
-            return React.cloneElement(
-              child as React.ReactElement<{ isLastListItem?: boolean }>,
-              { isLastListItem: index === lastLiIndex },
-            );
-          })}
-        </View>
+        <ListDepthContext.Provider value={depth + 1}>
+          <View
+            testID="markdown-list-unordered"
+            style={{
+              marginTop: theme.spacing.listBlockMarginTop,
+              marginBottom: theme.spacing.listBlockMarginBottom,
+              paddingLeft: depth > 0 ? theme.spacing.listIndent : 0,
+            }}
+          >
+            {items.map((child, index) => {
+              if (!React.isValidElement(child)) {
+                return wrapViewChildren(child, body);
+              }
+              return React.cloneElement(
+                child as React.ReactElement<{ isLastListItem?: boolean }>,
+                { isLastListItem: index === lastLiIndex },
+              );
+            })}
+          </View>
+        </ListDepthContext.Provider>
       );
     },
     ol: (props) => {
+      const depth = React.useContext(ListDepthContext);
       const items = React.Children.toArray(props.children);
       const lastLiIndex = (() => {
         for (let i = items.length - 1; i >= 0; i--) {
@@ -746,32 +768,34 @@ export const buildRnComponents = ({
         return -1;
       })();
       return (
-        <View
-          testID="markdown-list-ordered"
-          style={{
-            marginTop: theme.spacing.listBlockMarginTop,
-            marginBottom: theme.spacing.listBlockMarginBottom,
-            paddingLeft: 0,
-          }}
-        >
-          {items.map((child, index) => {
-            if (!React.isValidElement(child)) {
-              return wrapViewChildren(child, body);
-            }
-            const listIndex =
-              items.slice(0, index + 1).filter(React.isValidElement).length;
-            return React.cloneElement(
-              child as React.ReactElement<{
-                listIndex?: number;
-                isLastListItem?: boolean;
-              }>,
-              {
-                listIndex,
-                isLastListItem: index === lastLiIndex,
-              },
-            );
-          })}
-        </View>
+        <ListDepthContext.Provider value={depth + 1}>
+          <View
+            testID="markdown-list-ordered"
+            style={{
+              marginTop: theme.spacing.listBlockMarginTop,
+              marginBottom: theme.spacing.listBlockMarginBottom,
+              paddingLeft: depth > 0 ? theme.spacing.listIndent : 0,
+            }}
+          >
+            {items.map((child, index) => {
+              if (!React.isValidElement(child)) {
+                return wrapViewChildren(child, body);
+              }
+              const listIndex =
+                items.slice(0, index + 1).filter(React.isValidElement).length;
+              return React.cloneElement(
+                child as React.ReactElement<{
+                  listIndex?: number;
+                  isLastListItem?: boolean;
+                }>,
+                {
+                  listIndex,
+                  isLastListItem: index === lastLiIndex,
+                },
+              );
+            })}
+          </View>
+        </ListDepthContext.Provider>
       );
     },
 
@@ -783,6 +807,13 @@ export const buildRnComponents = ({
       };
       const isTask = typeof checked === 'boolean';
       const itemGap = isLastListItem ? 0 : theme.spacing.listItemGap;
+      const markerStyle: TextStyle = {
+        ...body,
+        color: theme.colors.textMuted,
+        width: 20,
+        marginRight: 0,
+        textAlign: 'center',
+      };
       const defaultDom = (
         <View
           style={{
@@ -806,7 +837,7 @@ export const buildRnComponents = ({
               }}
             />
           ) : (
-            <Text style={[body, { width: 20, marginRight: 0, textAlign: 'center' }]}>
+            <Text style={markerStyle}>
               {listIndex != null ? `${listIndex}.` : '\u2022'}
             </Text>
           )}
@@ -838,9 +869,16 @@ export const buildRnComponents = ({
             {
               borderLeftColor: theme.colors.blockquoteBorder,
               backgroundColor: theme.colors.blockquoteBackground,
-              paddingTop: theme.spacing.blockquotePadding / 2,
-              paddingBottom: theme.spacing.blockquotePadding / 2,
-              paddingRight: theme.spacing.blockquotePadding / 2,
+              // Fallbacks when theme.blockquote omits vertical/right padding.
+              paddingTop:
+                theme.blockquote.paddingTop ??
+                theme.spacing.blockquotePadding / 2,
+              paddingBottom:
+                theme.blockquote.paddingBottom ??
+                theme.spacing.blockquotePadding / 2,
+              paddingRight:
+                theme.blockquote.paddingRight ??
+                theme.spacing.blockquotePadding / 2,
               marginBottom: theme.spacing.paragraphGap,
             },
           ]}
@@ -958,13 +996,16 @@ export const buildRnComponents = ({
     hr: () => (
       <View
         testID="markdown-hr"
+        accessibilityRole="none"
+        {...webClassName('agentui-markdown-hr')}
         style={{
-          height: StyleSheet.hairlineWidth,
+          // Figma Home `901:20534` / agentic-ui: 1px rule, full content width, 20px y-gap.
+          height: 1,
           width: '100%',
           alignSelf: 'stretch',
           backgroundColor: theme.colors.hr,
-          // Keep close to paragraph rhythm — *4 left huge empty bands on both sides.
-          marginVertical: theme.spacing.paragraphGap,
+          marginVertical: theme.spacing.hrMarginVertical,
+          marginHorizontal: 0,
         }}
       />
     ),
@@ -984,11 +1025,19 @@ export const buildRnComponents = ({
       );
     },
 
-    table: (props) => (
-      <MarkdownTable theme={theme} body={body} node={props.node}>
-        {props.children}
-      </MarkdownTable>
-    ),
+    table: (props) => {
+      const defaultDom = (
+        <MarkdownTable theme={theme} body={body} node={props.node}>
+          {props.children}
+        </MarkdownTable>
+      );
+      return applyEleRender(
+        eleRender,
+        'table',
+        props as MarkdownRendererEleProps,
+        defaultDom,
+      );
+    },
     thead: (props) => {
       const { layoutMode } = useTableColumnWidths();
       return (
@@ -999,9 +1048,20 @@ export const buildRnComponents = ({
     },
     tbody: (props) => {
       const { layoutMode } = useTableColumnWidths();
+      const rows = React.Children.toArray(props.children).filter(
+        React.isValidElement,
+      );
       return (
         <View testID="markdown-table-body" style={tableSectionStyle(layoutMode)}>
-          {wrapViewChildren(props.children, body)}
+          {rows.map((row, index) =>
+            React.cloneElement(
+              row as React.ReactElement<{ showBottomBorder?: boolean }>,
+              {
+                key: (row as React.ReactElement).key ?? `tr-${index}`,
+                showBottomBorder: index < rows.length - 1,
+              },
+            ),
+          )}
         </View>
       );
     },
@@ -1009,8 +1069,15 @@ export const buildRnComponents = ({
       if (!hastRowHasVisibleCells(props.node as HastNode)) {
         return null;
       }
+      const showBottomBorder =
+        (props as { showBottomBorder?: boolean }).showBottomBorder !== false;
       return (
-        <MarkdownTableRow theme={theme} body={body} rowNode={props.node}>
+        <MarkdownTableRow
+          theme={theme}
+          body={body}
+          rowNode={props.node}
+          showBottomBorder={showBottomBorder}
+        >
           {props.children}
         </MarkdownTableRow>
       );

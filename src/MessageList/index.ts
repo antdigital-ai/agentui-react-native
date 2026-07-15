@@ -1,6 +1,6 @@
 export { MessageList } from './MessageList';
 export { MessageBubble } from './MessageBubble';
-export { defaultChatTheme, mergeChatTheme } from './chatTheme';
+export { defaultChatTheme, desktopChatTheme, mergeChatTheme } from './chatTheme';
 export type { ChatTheme } from './chatTheme';
 export type {
   ChatMessage,

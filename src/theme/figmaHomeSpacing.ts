@@ -7,6 +7,11 @@ export const figmaHomeSpacing = {
   messageGap: 16,
   /** Major blocks inside assistant reply (e.g. intro → sections stack) */
   contentBlockGap: 20,
+  /**
+   * Markdown `---` divider — Figma Home `901:20534`
+   * (agentic-ui MarkdownRenderer `--margin-8x` = 20px; full content width, no side inset).
+   */
+  hrMarginVertical: 20,
   /** Between section blocks (`What it is`, trend, holding) */
   sectionGap: 24,
   /** Section title → body (`gap/区块内/base`) */
