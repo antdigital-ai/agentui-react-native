@@ -96,7 +96,8 @@ describe('MarkdownRenderer', () => {
       (node) => node.props.onScrollBeginDrag === onScrollBeginDrag,
     );
     expect(tableScroll).toBeTruthy();
-    expect(tableScroll?.props.alwaysBounceVertical).toBe(false);
+    expect(tableScroll?.props.horizontal).toBe(false);
+    expect(tableScroll?.props.scrollEnabled).toBe(false);
   });
 
   it('renders hr full-width with Figma Home vertical margin', () => {
@@ -116,7 +117,7 @@ describe('MarkdownRenderer', () => {
     expect(style.backgroundColor).toBe(agenticColors.figmaHome.tableRowBorder);
   });
 
-  it('renders full long table cell text for horizontal scroll', () => {
+  it('wraps long table cell text within bubble width', () => {
     const longValue =
       'did:anvita:0x169b9fd401bf4be4f6f7market-information-discovery-service';
     const { getByTestId, getByText } = wrap(
@@ -129,7 +130,7 @@ describe('MarkdownRenderer', () => {
     expect(getByText(longValue)).toBeTruthy();
   });
 
-  it('keeps long chinese capability text intact for table scroll', () => {
+  it('keeps long chinese capability text intact with wrapping', () => {
     const longValue =
       '分析多个资产的最新市场趋势和关键数据，生成研究报告';
     const { getByTestId, getByText } = wrap(

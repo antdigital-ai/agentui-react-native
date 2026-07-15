@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   View,
-  type LayoutChangeEvent,
   type ScrollViewProps,
   type TextStyle,
   type ViewStyle,
@@ -151,57 +150,6 @@ const tableAstHasVisibleBodyRows = (node: unknown): boolean => {
   return foundBodySection ? false : true;
 };
 
-type ReportColumnWidth = (columnIndex: number, width: number) => void;
-
-type TableLayoutMode = 'fill' | 'scroll';
-
-type TableColumnContextValue = {
-  layoutMode: TableLayoutMode;
-  layoutReady: boolean;
-  widths: number[];
-  report: ReportColumnWidth;
-};
-
-const noopReport: ReportColumnWidth = () => {};
-
-const EMPTY_WIDTHS: number[] = [];
-
-const sumColumnWidths = (widths: number[]): number =>
-  widths.reduce((total, width) => total + (width ?? 0), 0);
-
-const TableColumnContext = React.createContext<TableColumnContextValue | null>(
-  null,
-);
-
-const defaultTableContext: TableColumnContextValue = {
-  // Unconstrained until MarkdownTable measures — fill would shrink cells and
-  // under-report natural column widths (horizontal scroll never enables).
-  layoutMode: 'scroll',
-  layoutReady: false,
-  widths: EMPTY_WIDTHS,
-  report: noopReport,
-};
-
-const useTableColumnWidths = (): TableColumnContextValue => {
-  const ctx = React.useContext(TableColumnContext);
-  return ctx ?? defaultTableContext;
-};
-
-const scheduleFrame = (cb: () => void): number => {
-  if (typeof requestAnimationFrame === 'function') {
-    return requestAnimationFrame(cb);
-  }
-  return setTimeout(cb, 16) as unknown as number;
-};
-
-const cancelFrame = (handle: number): void => {
-  if (typeof cancelAnimationFrame === 'function') {
-    cancelAnimationFrame(handle);
-    return;
-  }
-  clearTimeout(handle as unknown as ReturnType<typeof setTimeout>);
-};
-
 type MarkdownTableProps = {
   theme: MarkdownTheme;
   body: TextStyle;
@@ -209,10 +157,11 @@ type MarkdownTableProps = {
   node?: unknown;
 } & Omit<ScrollViewProps, 'children' | 'horizontal'>;
 
-const tableSectionStyle = (layoutMode: TableLayoutMode): ViewStyle =>
-  layoutMode === 'fill'
-    ? { width: '100%', alignSelf: 'stretch' }
-    : { alignSelf: 'flex-start' };
+/** Stretch table to bubble width; cells share row space and wrap. */
+const tableSectionStyle: ViewStyle = {
+  width: '100%',
+  alignSelf: 'stretch',
+};
 
 const MarkdownTable: React.FC<MarkdownTableProps> = ({
   theme,
@@ -224,68 +173,6 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
   if (!tableAstHasVisibleBodyRows(node)) {
     return null;
   }
-  const [containerWidth, setContainerWidth] = React.useState(0);
-  const [widths, setWidths] = React.useState<number[]>(EMPTY_WIDTHS);
-  const measuredRef = React.useRef<number[]>([]);
-  const frameRef = React.useRef<number | null>(null);
-
-  const flush = React.useCallback(() => {
-    frameRef.current = null;
-    setWidths((prev) => {
-      const measured = measuredRef.current;
-      let changed = prev.length !== measured.length;
-      if (!changed) {
-        for (let i = 0; i < measured.length; i += 1) {
-          if ((prev[i] ?? 0) !== (measured[i] ?? 0)) {
-            changed = true;
-            break;
-          }
-        }
-      }
-      return changed ? measured.slice() : prev;
-    });
-  }, []);
-
-  const report = React.useCallback<ReportColumnWidth>(
-    (columnIndex, width) => {
-      const current = measuredRef.current[columnIndex] ?? 0;
-      if (width <= current) return;
-      measuredRef.current[columnIndex] = width;
-      if (frameRef.current == null) {
-        frameRef.current = scheduleFrame(flush);
-      }
-    },
-    [flush],
-  );
-
-  React.useEffect(
-    () => () => {
-      if (frameRef.current != null) cancelFrame(frameRef.current);
-    },
-    [],
-  );
-
-  const columnsMeasured =
-    containerWidth > 0 && sumColumnWidths(widths) > 0;
-  const contentOverflows =
-    columnsMeasured && sumColumnWidths(widths) > containerWidth + 1;
-  // Measure with unconstrained (scroll) layout first; only fill when content fits.
-  // Starting in fill shrinks cells (minWidth: 0) so onLayout under-reports width and
-  // scroll stays disabled while overflow:hidden still clips text.
-  const layoutMode: TableLayoutMode =
-    !columnsMeasured || contentOverflows ? 'scroll' : 'fill';
-
-  const contextValue = React.useMemo<TableColumnContextValue>(
-    () => ({ layoutMode, layoutReady: columnsMeasured, widths, report }),
-    [layoutMode, columnsMeasured, widths, report],
-  );
-
-  const handleContainerLayout = React.useCallback((event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    if (width > 0) {
-      setContainerWidth((prev) => (prev === width ? prev : width));
-    }
-  }, []);
 
   const tableBlockStyle: ViewStyle = {
     width: '100%',
@@ -296,45 +183,29 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
     overflow: 'hidden',
   };
 
-  const scrollViewStyle: ViewStyle = {
-    width: '100%',
-    // Prefer horizontal pans on nested MessageList FlatList (esp. RN Web / WebView).
-    ...(Platform.OS === 'web' && contentOverflows
-      ? ({ touchAction: 'pan-x' } as ViewStyle)
-      : null),
-  };
-
   return (
     <View
       testID="markdown-table"
-      {...webClassName(
-        contentOverflows
-          ? 'agentui-markdown-table agentui-markdown-table--scrollable'
-          : 'agentui-markdown-table',
-      )}
+      {...webClassName('agentui-markdown-table')}
       style={tableBlockStyle}
-      onLayout={handleContainerLayout}
     >
+      {/* ScrollView kept so eleRender can cloneElement ScrollView props (rest). */}
       <ScrollView
-        horizontal
-        nestedScrollEnabled
-        directionalLockEnabled
-        alwaysBounceVertical={false}
-        scrollEnabled={contentOverflows}
-        showsHorizontalScrollIndicator={contentOverflows}
-        bounces={contentOverflows}
-        overScrollMode={contentOverflows ? 'auto' : 'never'}
-        style={scrollViewStyle}
-        contentContainerStyle={
-          layoutMode === 'fill' ? { minWidth: '100%' } : undefined
-        }
         {...restProps}
+        horizontal={false}
+        scrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        style={[{ width: '100%' }, restProps.style]}
+        contentContainerStyle={[
+          { width: '100%' },
+          restProps.contentContainerStyle,
+        ]}
       >
-        <TableColumnContext.Provider value={contextValue}>
-          <View style={tableSectionStyle(layoutMode)}>
-            {wrapViewChildren(children, body)}
-          </View>
-        </TableColumnContext.Provider>
+        <View style={tableSectionStyle}>
+          {wrapViewChildren(children, body)}
+        </View>
       </ScrollView>
     </View>
   );
@@ -344,9 +215,6 @@ type MarkdownTableCellProps = {
   theme: MarkdownTheme;
   columnIndex: number;
   isHeaderCell: boolean;
-  layoutMode: TableLayoutMode;
-  columnWidth?: number;
-  reportWidth: ReportColumnWidth;
   hasContent: boolean;
   children: React.ReactNode;
 };
@@ -354,9 +222,6 @@ type MarkdownTableCellProps = {
 // Props injected onto th/td elements by the `tr` renderer via cloneElement.
 type TableCellInjectedProps = {
   columnIndex?: number;
-  layoutMode?: TableLayoutMode;
-  columnWidth?: number;
-  reportWidth?: ReportColumnWidth;
   hasContent?: boolean;
 };
 
@@ -364,14 +229,10 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
   theme,
   columnIndex,
   isHeaderCell,
-  layoutMode,
-  columnWidth,
-  reportWidth,
   hasContent,
   children,
 }) => {
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
-  const horizontalPadding = theme.spacing.tableCellPadding * 2;
   const verticalPadding = theme.spacing.tableCellPadding * 2;
   // Reserve one text line so empty cells in populated rows keep a consistent height.
   const lineHeight =
@@ -379,43 +240,13 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
       ? cellTextStyle.lineHeight
       : undefined;
 
-  const handleContentLayout = React.useCallback(
-    (event: LayoutChangeEvent) => {
-      const { width } = event.nativeEvent.layout;
-      if (width > 0) {
-        reportWidth(columnIndex, width + horizontalPadding);
-      }
-    },
-    [columnIndex, horizontalPadding, reportWidth],
-  );
-
-  const cellLayoutStyle: ViewStyle =
-    layoutMode === 'fill'
-      ? { flex: 1, minWidth: 0 }
-      : {
-          flexGrow: 0,
-          flexShrink: 0,
-          ...(columnWidth ? { width: columnWidth } : undefined),
-        };
-
-  // Keep scroll-mode text on one line so natural width measures correctly.
-  const measureTextStyle: TextStyle =
-    layoutMode === 'scroll'
-      ? ({
-          ...cellTextStyle,
-          flexShrink: 0,
-          ...(Platform.OS === 'web'
-            ? ({ whiteSpace: 'nowrap' } as TextStyle)
-            : null),
-        } as TextStyle)
-      : cellTextStyle;
-
   return (
     <View
       {...webClassName(tableCellWebClass(isHeaderCell, columnIndex))}
       style={{
         ...tableCellPaddingStyle(theme),
-        ...cellLayoutStyle,
+        flex: 1,
+        minWidth: 0,
         justifyContent: 'center',
         ...(lineHeight != null
           ? { minHeight: lineHeight + verticalPadding }
@@ -427,13 +258,11 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
     >
       <View
         style={{
-          alignSelf: 'flex-start',
-          ...(layoutMode === 'scroll' ? { flexShrink: 0 } : null),
+          width: '100%',
           ...(lineHeight ? { minHeight: lineHeight } : undefined),
         }}
-        onLayout={handleContentLayout}
       >
-        {wrapViewChildren(children, measureTextStyle)}
+        {wrapViewChildren(children, cellTextStyle)}
       </View>
     </View>
   );
@@ -456,7 +285,6 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
   showBottomBorder = true,
   children,
 }) => {
-  const { layoutMode, widths, report } = useTableColumnWidths();
   const cells = React.Children.toArray(children);
   const astRow = rowNode as HastNode | undefined;
 
@@ -464,7 +292,7 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
     <View
       {...webClassName('agentui-markdown-table-row')}
       style={{
-        ...tableSectionStyle(layoutMode),
+        ...tableSectionStyle,
         flexDirection: 'row',
         ...(showBottomBorder ? tableRowBorderStyle(theme) : null),
       }}
@@ -475,9 +303,6 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
               cell as React.ReactElement<TableCellInjectedProps>,
               {
                 columnIndex: index,
-                layoutMode,
-                columnWidth: widths[index],
-                reportWidth: report,
                 hasContent: hastRowCellHasContent(astRow, index),
               },
             )
@@ -1038,21 +863,17 @@ export const buildRnComponents = ({
         defaultDom,
       );
     },
-    thead: (props) => {
-      const { layoutMode } = useTableColumnWidths();
-      return (
-        <View testID="markdown-table-head" style={tableSectionStyle(layoutMode)}>
-          {wrapViewChildren(props.children, body)}
-        </View>
-      );
-    },
+    thead: (props) => (
+      <View testID="markdown-table-head" style={tableSectionStyle}>
+        {wrapViewChildren(props.children, body)}
+      </View>
+    ),
     tbody: (props) => {
-      const { layoutMode } = useTableColumnWidths();
       const rows = React.Children.toArray(props.children).filter(
         React.isValidElement,
       );
       return (
-        <View testID="markdown-table-body" style={tableSectionStyle(layoutMode)}>
+        <View testID="markdown-table-body" style={tableSectionStyle}>
           {rows.map((row, index) =>
             React.cloneElement(
               row as React.ReactElement<{ showBottomBorder?: boolean }>,
@@ -1083,16 +904,12 @@ export const buildRnComponents = ({
       );
     },
     th: (props) => {
-      const { columnIndex, layoutMode, columnWidth, reportWidth, hasContent } =
-        props as TableCellInjectedProps;
+      const { columnIndex, hasContent } = props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell
-          layoutMode={layoutMode ?? 'scroll'}
-          columnWidth={columnWidth}
-          reportWidth={reportWidth ?? noopReport}
           hasContent={hasContent ?? true}
         >
           {props.children}
@@ -1100,16 +917,12 @@ export const buildRnComponents = ({
       );
     },
     td: (props) => {
-      const { columnIndex, layoutMode, columnWidth, reportWidth, hasContent } =
-        props as TableCellInjectedProps;
+      const { columnIndex, hasContent } = props as TableCellInjectedProps;
       return (
         <MarkdownTableCell
           theme={theme}
           columnIndex={columnIndex ?? 0}
           isHeaderCell={false}
-          layoutMode={layoutMode ?? 'scroll'}
-          columnWidth={columnWidth}
-          reportWidth={reportWidth ?? noopReport}
           hasContent={hasContent ?? true}
         >
           {props.children}
