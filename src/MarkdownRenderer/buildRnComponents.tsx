@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
   type ScrollViewProps,
   type TextStyle,
   type ViewStyle,
@@ -150,12 +151,38 @@ const tableAstHasVisibleBodyRows = (node: unknown): boolean => {
   return foundBodySection ? false : true;
 };
 
+const tableAstColumnCount = (node: unknown): number => {
+  if (!node || typeof node !== 'object') return 0;
+  const root = node as HastNode;
+  let maxColumns = 0;
+  const visit = (current: HastNode) => {
+    if (current.tagName === 'tr') {
+      const columns = (current.children ?? []).filter(
+        (child) => child.tagName === 'td' || child.tagName === 'th',
+      ).length;
+      maxColumns = Math.max(maxColumns, columns);
+    }
+    for (const child of current.children ?? []) visit(child);
+  };
+  visit(root);
+  return maxColumns;
+};
+
+const MIN_TABLE_COLUMN_WIDTH = 96;
+const DEFAULT_SCROLL_COLUMN_COUNT = 4;
+
+type TableLayoutContextValue = {
+  minColumnWidth?: number;
+};
+
+const TableLayoutContext = React.createContext<TableLayoutContextValue>({});
+
 type MarkdownTableProps = {
   theme: MarkdownTheme;
   body: TextStyle;
   children: React.ReactNode;
   node?: unknown;
-} & Omit<ScrollViewProps, 'children' | 'horizontal'>;
+} & Omit<ScrollViewProps, 'children'>;
 
 /** Stretch table to bubble width; cells share row space and wrap. */
 const tableSectionStyle: ViewStyle = {
@@ -170,9 +197,43 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
   node,
   ...restProps
 }) => {
-  if (!tableAstHasVisibleBodyRows(node)) {
-    return null;
-  }
+  const [containerWidth, setContainerWidth] = React.useState(0);
+  const columnCount = tableAstColumnCount(node);
+  const naturalTableWidth = columnCount * MIN_TABLE_COLUMN_WIDTH;
+  const needsHorizontalScroll =
+    columnCount > 0 &&
+    (containerWidth > 0
+      ? naturalTableWidth > containerWidth
+      : columnCount >= DEFAULT_SCROLL_COLUMN_COUNT);
+  const {
+    horizontal: horizontalOverride,
+    scrollEnabled: scrollEnabledOverride,
+    showsHorizontalScrollIndicator: indicatorOverride,
+    bounces: bouncesOverride,
+    alwaysBounceVertical: alwaysBounceVerticalOverride,
+    style: scrollViewStyle,
+    contentContainerStyle,
+    ...scrollViewProps
+  } = restProps;
+  const horizontal = horizontalOverride ?? needsHorizontalScroll;
+  const scrollEnabled = scrollEnabledOverride ?? horizontal;
+  const minTableWidth = horizontal
+    ? Math.max(naturalTableWidth, containerWidth)
+    : undefined;
+  const tableLayout = React.useMemo<TableLayoutContextValue>(
+    () => ({
+      minColumnWidth: horizontal ? MIN_TABLE_COLUMN_WIDTH : undefined,
+    }),
+    [horizontal],
+  );
+  const handleTableLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    if (width > 0) {
+      setContainerWidth((previous) => (previous === width ? previous : width));
+    }
+  }, []);
+
+  if (!tableAstHasVisibleBodyRows(node)) return null;
 
   const tableBlockStyle: ViewStyle = {
     width: '100%',
@@ -188,24 +249,28 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({
       testID="markdown-table"
       {...webClassName('agentui-markdown-table')}
       style={tableBlockStyle}
+      onLayout={handleTableLayout}
     >
-      {/* ScrollView kept so eleRender can cloneElement ScrollView props (rest). */}
       <ScrollView
-        {...restProps}
-        horizontal={false}
-        scrollEnabled={false}
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        alwaysBounceVertical={false}
-        style={[{ width: '100%' }, restProps.style]}
+        {...scrollViewProps}
+        horizontal={horizontal}
+        scrollEnabled={scrollEnabled}
+        showsHorizontalScrollIndicator={indicatorOverride ?? horizontal}
+        bounces={bouncesOverride ?? horizontal}
+        alwaysBounceVertical={alwaysBounceVerticalOverride ?? false}
+        style={[{ width: '100%' }, scrollViewStyle]}
         contentContainerStyle={[
-          { width: '100%' },
-          restProps.contentContainerStyle,
+          horizontal
+            ? { minWidth: minTableWidth }
+            : { width: '100%' as const },
+          contentContainerStyle,
         ]}
       >
-        <View style={tableSectionStyle}>
-          {wrapViewChildren(children, body)}
-        </View>
+        <TableLayoutContext.Provider value={tableLayout}>
+          <View style={tableSectionStyle}>
+            {wrapViewChildren(children, body)}
+          </View>
+        </TableLayoutContext.Provider>
       </ScrollView>
     </View>
   );
@@ -232,6 +297,7 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
   hasContent,
   children,
 }) => {
+  const { minColumnWidth } = React.useContext(TableLayoutContext);
   const cellTextStyle = tableCellTextStyle(theme, columnIndex, isHeaderCell);
   const verticalPadding = theme.spacing.tableCellPadding * 2;
   // Reserve one text line so empty cells in populated rows keep a consistent height.
@@ -242,11 +308,12 @@ const MarkdownTableCellBase: React.FC<MarkdownTableCellProps> = ({
 
   return (
     <View
+      testID="markdown-table-cell"
       {...webClassName(tableCellWebClass(isHeaderCell, columnIndex))}
       style={{
         ...tableCellPaddingStyle(theme),
         flex: 1,
-        minWidth: 0,
+        minWidth: minColumnWidth ?? 0,
         justifyContent: 'center',
         ...(lineHeight != null
           ? { minHeight: lineHeight + verticalPadding }
@@ -290,6 +357,7 @@ const MarkdownTableRowBase: React.FC<MarkdownTableRowProps> = ({
 
   return (
     <View
+      testID="markdown-table-row"
       {...webClassName('agentui-markdown-table-row')}
       style={{
         ...tableSectionStyle,
@@ -870,7 +938,9 @@ export const buildRnComponents = ({
     ),
     tbody: (props) => {
       const rows = React.Children.toArray(props.children).filter(
-        React.isValidElement,
+        (row): row is React.ReactElement<RendererBlockProps> =>
+          React.isValidElement<RendererBlockProps>(row) &&
+          hastRowHasVisibleCells(row.props.node as HastNode),
       );
       return (
         <View testID="markdown-table-body" style={tableSectionStyle}>
