@@ -1,6 +1,6 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
-import { ScrollView, StyleSheet } from 'react-native';
+import { fireEvent, render } from '@testing-library/react-native';
+import { ScrollView, StyleSheet, type ScrollViewProps } from 'react-native';
 import { MarkdownRenderer } from '../src/MarkdownRenderer/MarkdownRenderer';
 import { MarkdownThemeProvider } from '../src/theme/MarkdownThemeProvider';
 import { agenticColors } from '../src/theme/agenticTokens';
@@ -71,8 +71,8 @@ describe('MarkdownRenderer', () => {
       (props: MarkdownRendererEleProps, defaultDom: React.ReactNode) => {
         if (props.tagName === 'table') {
           return React.cloneElement(
-            defaultDom as React.ReactElement,
-            { onScrollBeginDrag },
+            defaultDom as React.ReactElement<ScrollViewProps>,
+            { horizontal: true, scrollEnabled: true, onScrollBeginDrag },
           );
         }
         return defaultDom;
@@ -89,15 +89,47 @@ describe('MarkdownRenderer', () => {
     expect(eleRender).toHaveBeenCalled();
     expect(
       eleRender.mock.calls.some(
-        ([props]: [MarkdownRendererEleProps]) => props.tagName === 'table',
+        ([props]: [MarkdownRendererEleProps, React.ReactNode]) =>
+          props.tagName === 'table',
       ),
     ).toBe(true);
     const tableScroll = UNSAFE_getAllByType(ScrollView).find(
       (node) => node.props.onScrollBeginDrag === onScrollBeginDrag,
     );
     expect(tableScroll).toBeTruthy();
-    expect(tableScroll?.props.horizontal).toBe(false);
-    expect(tableScroll?.props.scrollEnabled).toBe(false);
+    expect(tableScroll?.props.horizontal).toBe(true);
+    expect(tableScroll?.props.scrollEnabled).toBe(true);
+  });
+
+  it('uses horizontal scrolling and minimum cell widths for wide tables', () => {
+    const { getAllByTestId, UNSAFE_getAllByType } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={
+          '| A | B | C | D |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |'
+        }
+      />,
+    );
+    const tableScroll = UNSAFE_getAllByType(ScrollView)[0];
+    expect(tableScroll.props.horizontal).toBe(true);
+    expect(tableScroll.props.scrollEnabled).toBe(true);
+    for (const cell of getAllByTestId('markdown-table-cell')) {
+      expect(StyleSheet.flatten(cell.props.style).minWidth).toBe(96);
+    }
+  });
+
+  it('switches a three-column table to horizontal scrolling in a narrow container', () => {
+    const { getByTestId, UNSAFE_getAllByType } = wrap(
+      <MarkdownRenderer
+        layoutDensity="compact"
+        content={'| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |'}
+      />,
+    );
+    expect(UNSAFE_getAllByType(ScrollView)[0].props.horizontal).toBe(false);
+    fireEvent(getByTestId('markdown-table'), 'layout', {
+      nativeEvent: { layout: { width: 250, height: 100, x: 0, y: 0 } },
+    });
+    expect(UNSAFE_getAllByType(ScrollView)[0].props.horizontal).toBe(true);
   });
 
   it('renders hr full-width with Figma Home vertical margin', () => {
@@ -167,7 +199,7 @@ describe('MarkdownRenderer', () => {
   });
 
   it('skips empty body rows but keeps populated rows', () => {
-    const { getByTestId, getByText, queryByText } = wrap(
+    const { getAllByTestId, getByTestId, getByText, queryByText } = wrap(
       <MarkdownRenderer
         layoutDensity="compact"
         content={
@@ -179,6 +211,11 @@ describe('MarkdownRenderer', () => {
     expect(getByText('价格')).toBeTruthy();
     expect(getByText('$1,770.31')).toBeTruthy();
     expect(queryByText('| | |')).toBeNull();
+    const rows = getAllByTestId('markdown-table-row');
+    expect(rows).toHaveLength(2);
+    expect(
+      StyleSheet.flatten(rows[1].props.style).borderBottomWidth,
+    ).toBeUndefined();
   });
 
   it('renders plain assistant text via Text fast path', () => {
