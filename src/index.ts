@@ -38,11 +38,19 @@ export type {
   MarkdownRendererProps,
   MarkdownRendererRef,
   ContentThrottleOptions,
+  ContentThrottleEasing,
+  ContentThrottleBezier,
   UseMarkdownToReactOptions,
   MarkdownRemarkPlugin,
   RendererBlockProps,
   AgentCardRendererProps,
 } from './MarkdownRenderer/types';
+export {
+  sampleCubicBezier,
+  easingMultiplier,
+  DEFAULT_STREAM_BEZIER,
+} from './MarkdownRenderer/streaming/cubicBezier';
+export type { CubicBezierPoints } from './MarkdownRenderer/streaming/cubicBezier';
 export { MOBILE_LAYOUT_BREAKPOINT, type LayoutDensity } from './theme/layout';
 export { compactChatTheme, compactMarkdownTheme } from './theme/mobileTheme';
 export {

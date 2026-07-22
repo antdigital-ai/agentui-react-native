@@ -1,10 +1,29 @@
 import { AppState, type AppStateStatus } from 'react-native';
-import type { ContentThrottleOptions } from './types';
+import type {
+  ContentThrottleEasing,
+  ContentThrottleOptions,
+} from './types';
+import {
+  DEFAULT_STREAM_BEZIER,
+  easingMultiplier,
+  type CubicBezierPoints,
+} from './streaming/cubicBezier';
 
 const DEFAULT_CHARS_PER_FRAME = 3;
 const DEFAULT_SPEED = 1;
 const DEFAULT_BACKGROUND_INTERVAL_MS = 100;
 const DEFAULT_BACKGROUND_BATCH_MULTIPLIER = 10;
+const DEFAULT_BACKLOG_SOFT_CAP = 96;
+const DEFAULT_MIN_MULTIPLIER = 1;
+const DEFAULT_MAX_MULTIPLIER = 6;
+
+interface ResolvedEasing {
+  enabled: boolean;
+  backlogSoftCap: number;
+  bezier: CubicBezierPoints;
+  minMultiplier: number;
+  maxMultiplier: number;
+}
 
 interface ResolvedOptions {
   charsPerFrame: number;
@@ -12,6 +31,33 @@ interface ResolvedOptions {
   flushOnComplete: boolean;
   backgroundInterval: number;
   backgroundBatchMultiplier: number;
+  easing: ResolvedEasing;
+}
+
+function resolveEasing(
+  easing: ContentThrottleOptions['easing'],
+): ResolvedEasing {
+  if (easing === false) {
+    return {
+      enabled: false,
+      backlogSoftCap: DEFAULT_BACKLOG_SOFT_CAP,
+      bezier: DEFAULT_STREAM_BEZIER,
+      minMultiplier: DEFAULT_MIN_MULTIPLIER,
+      maxMultiplier: DEFAULT_MAX_MULTIPLIER,
+    };
+  }
+  const cfg: ContentThrottleEasing =
+    easing === true || easing == null ? {} : easing;
+  return {
+    enabled: true,
+    backlogSoftCap: Math.max(1, cfg.backlogSoftCap ?? DEFAULT_BACKLOG_SOFT_CAP),
+    bezier: cfg.bezier ?? DEFAULT_STREAM_BEZIER,
+    minMultiplier: Math.max(0.1, cfg.minMultiplier ?? DEFAULT_MIN_MULTIPLIER),
+    maxMultiplier: Math.max(
+      cfg.minMultiplier ?? DEFAULT_MIN_MULTIPLIER,
+      cfg.maxMultiplier ?? DEFAULT_MAX_MULTIPLIER,
+    ),
+  };
 }
 
 export class ContentThrottle {
@@ -51,6 +97,7 @@ export class ContentThrottle {
       backgroundBatchMultiplier:
         options?.backgroundBatchMultiplier ??
         DEFAULT_BACKGROUND_BATCH_MULTIPLIER,
+      easing: resolveEasing(options?.easing),
     };
   }
 
@@ -126,6 +173,29 @@ export class ContentThrottle {
     }
   }
 
+  private resolveBatchSize(remaining: number, isVisible: boolean): number {
+    const baseBatch = Math.max(
+      1,
+      Math.ceil(this.options.charsPerFrame * this.options.speed),
+    );
+    const { easing } = this.options;
+    let batch = baseBatch;
+    if (easing.enabled) {
+      const ratio = remaining / easing.backlogSoftCap;
+      const mult = easingMultiplier(
+        ratio,
+        easing.bezier,
+        easing.minMultiplier,
+        easing.maxMultiplier,
+      );
+      batch = Math.max(1, Math.ceil(baseBatch * mult));
+    }
+    if (!isVisible) {
+      batch *= this.options.backgroundBatchMultiplier;
+    }
+    return batch;
+  }
+
   private tick = (): void => {
     this.rafId = null;
     this.timerId = null;
@@ -135,13 +205,7 @@ export class ContentThrottle {
     if (remaining <= 0) return;
 
     const isVisible = this.appStateVisible;
-    const baseBatch = Math.max(
-      1,
-      Math.ceil(this.options.charsPerFrame * this.options.speed),
-    );
-    const batchSize = isVisible
-      ? baseBatch
-      : baseBatch * this.options.backgroundBatchMultiplier;
+    const batchSize = this.resolveBatchSize(remaining, isVisible);
 
     this.displayedLength = Math.min(
       this.displayedLength + batchSize,

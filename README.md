@@ -90,6 +90,7 @@ import { MarkdownRenderer, MarkdownThemeProvider } from '@antdigital/agentui-rea
 ```
 
 - **Character throttle** — shows text gradually as `content` grows.
+- **Backlog easing** (default on) — batch size follows an inverse cubic-bezier of remaining chars: small backlog stays readable, large backlog catches up faster. Disable with `throttleOptions={{ easing: false }}`, or tune via `easing: { bezier, backlogSoftCap, minMultiplier, maxMultiplier }`.
 - **Block split** — finished blocks stay cached (`sealed`); only the last block re-parses often (`tail`).
 - `throttleOptions.fade` — accepted for API parity with web; **no visual effect** on React Native.
 

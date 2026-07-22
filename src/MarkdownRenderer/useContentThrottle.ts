@@ -13,6 +13,12 @@ export function useContentThrottle(
   const flushOnComplete = options?.flushOnComplete;
   const backgroundInterval = options?.backgroundInterval;
   const backgroundBatchMultiplier = options?.backgroundBatchMultiplier;
+  const easingOff = options?.easing === false;
+  const easingCfg = typeof options?.easing === 'object' ? options.easing : null;
+  const easingSoftCap = easingCfg?.backlogSoftCap;
+  const easingMin = easingCfg?.minMultiplier;
+  const easingMax = easingCfg?.maxMultiplier;
+  const easingBezier = easingCfg?.bezier?.join(',') ?? '';
   const [displayed, setDisplayed] = useState(content);
   const engineRef = useRef<ContentThrottle | null>(null);
   const optionsRef = useRef(options);
@@ -46,6 +52,11 @@ export function useContentThrottle(
     flushOnComplete,
     backgroundInterval,
     backgroundBatchMultiplier,
+    easingOff,
+    easingSoftCap,
+    easingMin,
+    easingMax,
+    easingBezier,
   ]);
 
   useLayoutEffect(
